@@ -1,0 +1,7 @@
+channel_names,units,record_count
+MLII; V1,mV; mV,40
+MLII; V2,mV; mV,2
+MLII; V5,mV; mV,2
+V5; V2,mV; mV,2
+MLII; V4,mV; mV,1
+V5; MLII,mV; mV,1

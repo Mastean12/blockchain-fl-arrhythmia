@@ -1,0 +1,16 @@
+symbol,source_description,count,share_of_beat_annotations_pct
+N,Normal beat,75052,68.5443951266736
+L,Left bundle branch block beat,8075,7.374833324200413
+R,Right bundle branch block beat,7259,6.629587009333845
+V,Premature ventricular contraction,7130,6.511772334557144
+/,Paced beat,7028,6.418616545198824
+A,Atrial premature beat,2546,2.325241565747895
+f,Fusion of paced and normal beat,982,0.8968527955869728
+F,Fusion of ventricular and normal beat,803,0.7333735181836447
+j,Nodal (junctional) escape beat,229,0.209143880029956
+a,Aberrated atrial premature beat,150,0.13699380787988383
+E,Ventricular escape beat,106,0.09680895756845125
+J,Nodal (junctional) premature beat,83,0.07580324036020239
+Q,Unclassifiable beat,33,0.030138637733574444
+e,Atrial escape beat,16,0.014612672840520941
+S,Supraventricular premature or ectopic beat (atrial or nodal),2,0.0018265841050651177
