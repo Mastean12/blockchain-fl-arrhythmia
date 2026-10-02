@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 
 data/raw/mitbih/
+data/processed/mitbih_v1/

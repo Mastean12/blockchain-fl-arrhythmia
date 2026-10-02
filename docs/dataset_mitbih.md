@@ -127,3 +127,7 @@ Records 100 and 200 are displayed for the first 10 seconds of each of their two 
 6. Before preprocessing, decide and document the target label definition and whether rare source symbols remain separate, are excluded, or are grouped. Any such mapping needs a literature-based rationale and a clear report of the resulting counts.
 7. Decide how to handle paced beats, escape beats, fusion beats, unclassifiable beats, rhythm-only annotations, and signal-quality/artifact events for the eventual research task.
 8. Establish leakage controls and an evaluation design before segmentation or split creation. No filtering, resampling, beat-window extraction, or train/validation/test split was performed in this exploration.
+
+### Day 3 follow-up
+
+For the initial reproducible preprocessing pass, the 15 observed beat symbols were retained as 15 distinct source labels (identity mapping); the eight known event symbols were counted but not converted into heartbeat segments. This is an operational preprocessing choice, not a final task taxonomy or clinical decision. No source beat classes were merged. Boundary beats without a complete 216-sample window were excluded and counted. See [`docs/preprocessing.md`](preprocessing.md) for the complete parameters and the open decisions that remain before model evaluation.

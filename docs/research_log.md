@@ -44,3 +44,34 @@ This is environment and documentation setup only. No dataset was downloaded, and
 ## Scope and reproducibility
 
 No model was trained. No final preprocessing, relabeling, or train/validation/test split was performed. The notebook reads original signal and annotation files through WFDB and validates source files using the PhysioNet checksum manifest; derived CSVs and figures are written only under `results/`. No commit or push was made.
+
+# Day 3 — ECG preprocessing pipeline
+
+**Date:** 2026-10-02
+
+## Completed
+
+- Reviewed `AGENTS.md`, the Day 2 dataset notes, and the dataset-exploration notebook before implementation. Day 2 had counted 15 beat symbols but intentionally did not define merged target classes.
+- Added a versioned configuration and modular code for WFDB loading/checksums, filtering, beat-window segmentation, normalization, source-symbol labels, validation, and NPZ/CSV/JSON storage under `src/preprocessing/`.
+- Processed a five-record representative subset (100, 104, 200, 201, 202) first: 11,198 windows, with no output failures. Then processed all 48 records into `data/processed/mitbih_v1/`.
+- Executed `notebooks/02_preprocessing_validation.ipynb` successfully. It displays raw/filtered ECG, annotated normalized windows, examples for available classes, and dataset-wide metadata/count checks; it saves a processed class-distribution figure.
+- Added `docs/preprocessing.md`, five unit tests, and a `.gitignore` rule for the reproducible processed dataset. Raw MIT-BIH data remains untouched.
+
+## Recorded preprocessing decisions
+
+- Butterworth bandpass, 0.5–40 Hz, order-4 prototype, designed as SOS and applied using forward-backward `sosfiltfilt`, at 360 Hz with odd padding.
+- Beat-centered fixed windows: 72 samples before and 144 after the annotation (216 samples total); incomplete edge windows are counted and dropped.
+- Per-window, per-channel z-score normalization (`ddof=0`, epsilon `1e-8`), stored as float32. Constant/near-constant windows fail rather than being silently changed.
+- Identity mapping for the 15 Day 2 beat symbols. No symbols were merged. The eight known event symbols are counted and excluded from heartbeat windows. Unknown symbols cause an error.
+- Records 201 and 202 share a pseudonymous grouping key because the source record directory documents the same analog tape; other group keys are record-derived and must not be interpreted as confirmed patient identifiers.
+
+## Actual output and checks
+
+- 48 records produced **109,460 segments**. The processed distribution is in `data/processed/mitbih_v1/class_distribution.csv` and `manifest.json`.
+- The output contains **34 boundary-dropped beat annotations** and **3,153 known non-beat/event annotations skipped**, consistent with the Day 2 event count.
+- Per-class segment counts: `/` 7,027; `A` 2,546; `E` 106; `F` 802; `J` 83; `L` 8,072; `N` 75,028; `Q` 33; `R` 7,255; `S` 2; `V` 7,129; `a` 150; `e` 16; `f` 982; `j` 229.
+- All 48 records generated nonempty segments. Pipeline source checksums, dimensions, finite values, labels, segment lengths, annotations, normalization and label/segment alignment checks passed. Five unit tests passed; notebook execution returned no cell errors; post-run output counts and metadata alignment were checked.
+
+## Open research decisions
+
+The source-label identity mapping is only an initial, auditable representation, not the final classification target. Literature review and study objectives must justify which symbols the research task evaluates and how paced, fusion, escape, unclassifiable, rare and event annotations are treated. The filter band, window duration, normalization and subject-level dependency mapping also require sensitivity analysis and evaluation-design decisions before training. No model, split, augmentation, class balancing, federated learning, privacy, blockchain, or proposed algorithm was implemented. No commit or push was made.

@@ -1,0 +1,11 @@
+{
+  "dataset": {"sampling_frequency_hz": 360, "channels": 2, "record_list": "RECORDS", "annotation_extension": "atr"},
+  "filter": {"type": "butterworth_bandpass", "low_hz": 0.5, "high_hz": 40.0, "prototype_order": 4, "method": "sosfiltfilt", "padtype": "odd"},
+  "segmentation": {"pre_seconds": 0.2, "post_seconds": 0.4, "boundary_policy": "drop_incomplete"},
+  "normalization": {"method": "per_segment_per_channel_zscore", "ddof": 0, "epsilon": 1e-8, "output_dtype": "float32"},
+  "labels": {
+    "beat_symbols": {"N":"N","L":"L","R":"R","V":"V","/":"/","A":"A","f":"f","F":"F","j":"j","a":"a","E":"E","J":"J","Q":"Q","e":"e","S":"S"},
+    "nonbeat_symbols": ["+", "~", "!", "\"", "x", "|", "[", "]"],
+    "patient_group_overrides": {"201":"mitdb_group_201_202", "202":"mitdb_group_201_202"}
+  }
+}
