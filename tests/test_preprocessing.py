@@ -28,6 +28,12 @@ class PreprocessingTests(unittest.TestCase):
         batch.segments=normalize_segments(batch.segments,CFG)
         self.assertTrue(validate_batch(batch,CFG))
 
+    def test_record_and_group_provenance_strings_are_not_truncated(self):
+        x=np.random.default_rng(7).normal(size=(500,2))
+        batch=segment_record(x,[250],["N"],"201","mitdb_group_201_202",CFG)
+        self.assertEqual(batch.record_ids.tolist(),["201"])
+        self.assertEqual(batch.patient_groups.tolist(),["mitdb_group_201_202"])
+
     def test_unknown_symbol_rejected(self):
         with self.assertRaises(ValueError): segment_record(np.ones((500,2)),[200],["?"],"100","g",CFG)
 

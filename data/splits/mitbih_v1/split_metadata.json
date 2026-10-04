@@ -1,0 +1,270 @@
+{
+  "dataset": "MIT-BIH Arrhythmia Database",
+  "dataset_version": "PhysioNet 1.0.0",
+  "duplicate_sample_check": "exact ECG segment bytes plus label, checked across split partitions",
+  "exclusions": [],
+  "limitations": [
+    "MIT-BIH provides 48 records from 47 subjects, but a complete record-to-subject mapping is not present in the processed files.",
+    "Records 201 and 202 are grouped because the PhysioNet record notes identify the same source analog tape; other group keys are record-derived and do not assert distinct identities for unknown patients.",
+    "Accordingly, this guarantees no split overlap by available record/group key, but does not establish complete person-level separation beyond the documented pair.",
+    "Random group allocation is not label-stratified; rare classes may be absent or sparse in validation/test. No records or labels are removed or rebalanced."
+  ],
+  "overlap_checks": {
+    "train_vs_test": {
+      "group_ids": [],
+      "record_ids": []
+    },
+    "train_vs_validation": {
+      "group_ids": [],
+      "record_ids": []
+    },
+    "validation_vs_test": {
+      "group_ids": [],
+      "record_ids": []
+    }
+  },
+  "random_seed": 42,
+  "segment_shape": [
+    216,
+    2
+  ],
+  "separation_unit": "patient_group key from Day 3 processed shards; keys are record-derived pseudonyms except the documented 201/202 shared-tape group",
+  "source_manifest": "data/processed/mitbih_v1/manifest.json",
+  "splits": {
+    "test": {
+      "absent_classes": [
+        "E",
+        "J",
+        "R",
+        "S",
+        "e",
+        "f",
+        "j"
+      ],
+      "class_distribution": {
+        "/": 2078,
+        "A": 50,
+        "F": 13,
+        "L": 2001,
+        "N": 10197,
+        "Q": 4,
+        "V": 1210,
+        "a": 6
+      },
+      "group_count": 7,
+      "groups": [
+        "record_100",
+        "record_101",
+        "record_107",
+        "record_113",
+        "record_214",
+        "record_219",
+        "record_233"
+      ],
+      "record_count": 7,
+      "record_proportion": 0.14583333333333334,
+      "records": [
+        "100",
+        "101",
+        "107",
+        "113",
+        "214",
+        "219",
+        "233"
+      ],
+      "segment_count": 15559,
+      "segment_proportion": 0.1421432486753152
+    },
+    "train": {
+      "absent_classes": [],
+      "class_distribution": {
+        "/": 3407,
+        "A": 2418,
+        "E": 106,
+        "F": 782,
+        "J": 80,
+        "L": 3948,
+        "N": 53489,
+        "Q": 29,
+        "R": 7255,
+        "S": 2,
+        "V": 5049,
+        "a": 28,
+        "e": 16,
+        "f": 722,
+        "j": 219
+      },
+      "group_count": 33,
+      "groups": [
+        "record_102",
+        "record_103",
+        "record_104",
+        "record_105",
+        "record_106",
+        "record_108",
+        "record_109",
+        "record_115",
+        "record_116",
+        "record_117",
+        "record_118",
+        "record_121",
+        "record_122",
+        "record_124",
+        "record_200",
+        "record_203",
+        "record_205",
+        "record_207",
+        "record_208",
+        "record_209",
+        "record_210",
+        "record_212",
+        "record_213",
+        "record_215",
+        "record_220",
+        "record_221",
+        "record_222",
+        "record_223",
+        "record_228",
+        "record_230",
+        "record_231",
+        "record_232",
+        "record_234"
+      ],
+      "record_count": 33,
+      "record_proportion": 0.6875,
+      "records": [
+        "102",
+        "103",
+        "104",
+        "105",
+        "106",
+        "108",
+        "109",
+        "115",
+        "116",
+        "117",
+        "118",
+        "121",
+        "122",
+        "124",
+        "200",
+        "203",
+        "205",
+        "207",
+        "208",
+        "209",
+        "210",
+        "212",
+        "213",
+        "215",
+        "220",
+        "221",
+        "222",
+        "223",
+        "228",
+        "230",
+        "231",
+        "232",
+        "234"
+      ],
+      "segment_count": 77550,
+      "segment_proportion": 0.7084779828247761
+    },
+    "validation": {
+      "absent_classes": [
+        "E",
+        "Q",
+        "R",
+        "S",
+        "e"
+      ],
+      "class_distribution": {
+        "/": 1542,
+        "A": 78,
+        "F": 7,
+        "J": 3,
+        "L": 2123,
+        "N": 11342,
+        "V": 870,
+        "a": 116,
+        "f": 260,
+        "j": 10
+      },
+      "group_count": 7,
+      "groups": [
+        "mitdb_group_201_202",
+        "record_111",
+        "record_112",
+        "record_114",
+        "record_119",
+        "record_123",
+        "record_217"
+      ],
+      "record_count": 8,
+      "record_proportion": 0.16666666666666666,
+      "records": [
+        "111",
+        "112",
+        "114",
+        "119",
+        "123",
+        "201",
+        "202",
+        "217"
+      ],
+      "segment_count": 16351,
+      "segment_proportion": 0.14937876849990864
+    }
+  },
+  "strategy": "seeded random assignment of complete record groups; labels are not used to rebalance or stratify",
+  "target_proportions": {
+    "test": 0.15,
+    "train": 0.7,
+    "validation": 0.15
+  },
+  "total_groups": 47,
+  "total_records": 48,
+  "total_segments": 109460,
+  "valid_labels": [
+    "/",
+    "A",
+    "E",
+    "F",
+    "J",
+    "L",
+    "N",
+    "Q",
+    "R",
+    "S",
+    "V",
+    "a",
+    "e",
+    "f",
+    "j"
+  ],
+  "validation": {
+    "duplicate_content_across_splits": false,
+    "duplicate_provenance_across_splits": false,
+    "expected_dimensions": [
+      216,
+      2
+    ],
+    "finite_values": true,
+    "group_overlap": false,
+    "metadata_fields": [
+      "annotation_samples",
+      "channel_names",
+      "ends",
+      "labels",
+      "patient_groups",
+      "record_ids",
+      "sampling_frequency_hz",
+      "segments",
+      "source_symbols",
+      "starts"
+    ],
+    "record_overlap": false,
+    "same_seed_reproducible": true,
+    "valid_labels": true
+  }
+}

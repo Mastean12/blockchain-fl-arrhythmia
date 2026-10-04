@@ -75,3 +75,31 @@ No model was trained. No final preprocessing, relabeling, or train/validation/te
 ## Open research decisions
 
 The source-label identity mapping is only an initial, auditable representation, not the final classification target. Literature review and study objectives must justify which symbols the research task evaluates and how paced, fusion, escape, unclassifiable, rare and event annotations are treated. The filter band, window duration, normalization and subject-level dependency mapping also require sensitivity analysis and evaluation-design decisions before training. No model, split, augmentation, class balancing, federated learning, privacy, blockchain, or proposed algorithm was implemented. No commit or push was made.
+
+# Day 4 — Dataset splitting and preparation
+
+**Date:** 2026-10-04
+
+## Preflight finding and repair
+
+- The first split audit found Day 3's `np.full(..., dtype=str)` had silently truncated persisted record IDs and group keys to one character. Split generation stopped before producing any final split.
+- Corrected string-width allocation in `src/preprocessing/segmentation.py` and added a regression test. Regenerated all 48 **derived** processed record shards from the unchanged raw MIT-BIH data. Verified 48 distinct full record IDs, 47 group keys, and the same 109,460 segment count. No raw files were changed or records omitted.
+
+## Split method and output
+
+- Split at the available record-group level. Seeded random group assignment (seed **42**, configurable) apportioned 47 groups by largest remainder as 33 train, 7 validation, and 7 test groups. The known same-tape pair (records 201/202) remains in one partition.
+- This yields 33/8/7 records and 77,550/16,351/15,559 segments, or 70.85%/14.94%/14.21% of segments. No class stratification, balancing, or record exclusion was used.
+- Saved per-record NPZ shards under `data/splits/mitbih_v1/{train,validation,test}/` plus split metadata and class-distribution CSVs.
+- A complete temporary preflight over the existing processed dataset passed before final split creation. The final saved splits were reopened and revalidated. Pairwise record/group overlap and exact segment-content-plus-label duplicates across splits were absent. All arrays have expected dimensions and finite values, metadata fields are present, labels are valid, and same-seed assignment is reproducible.
+- Executed `notebooks/03_dataset_splitting_validation.ipynb` without cell errors and saved `results/figures/mitbih_split_class_distribution.png`. Ten preprocessing/splitting unit tests pass.
+
+## Observed class-support limits
+
+- Validation has no `E`, `Q`, `R`, `S`, or `e`; test has no `E`, `J`, `R`, `S`, `e`, `f`, or `j`. Validation has 7 `F` and 3 `J`; test has 4 `Q` and 6 `a`. `S` has two segments overall, both in train.
+- See `docs/dataset_splits.md` for full per-class counts and proportions. These omissions are reported, not corrected through resampling or class removal.
+
+## Limitations and pending decisions
+
+- `patient_groups` contains record-derived pseudonyms for most records, not verified patient identities. MIT-BIH is described as 48 records from 47 subjects, and the 201/202 shared-tape relationship is documented; complete record-to-subject mapping remains unavailable. The result guarantees no overlap by record and known group keys but cannot claim verified patient-held-out evaluation for all records.
+- Review whether this random grouped split's sparse/absent evaluation classes are appropriate before Day 5 model evaluation. Also resolve the task's target label taxonomy before training.
+- No model, class balancing, augmentation, federated learning, privacy, blockchain, or proposed algorithm was implemented. No commit or push was made.

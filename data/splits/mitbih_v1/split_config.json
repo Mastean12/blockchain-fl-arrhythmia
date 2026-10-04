@@ -1,0 +1,10 @@
+{
+  "random_seed": 42,
+  "target_proportions": {
+    "train": 0.70,
+    "validation": 0.15,
+    "test": 0.15
+  },
+  "assignment_unit": "patient_group",
+  "group_count_rounding": "largest_remainder"
+}

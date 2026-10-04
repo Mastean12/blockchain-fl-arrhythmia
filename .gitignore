@@ -6,3 +6,4 @@ __pycache__/
 
 data/raw/mitbih/
 data/processed/mitbih_v1/
+data/splits/mitbih_v1/*/*.npz

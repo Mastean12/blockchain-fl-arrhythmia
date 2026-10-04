@@ -35,4 +35,8 @@ def segment_record(signal, samples, symbols, record_id, patient_group, config):
     shape=(0,config.segment_length,config.n_channels)
     seg=np.stack(cuts) if cuts else np.empty(shape,dtype=x.dtype)
     n=len(labels)
-    return SegmentBatch(seg,np.asarray(labels,dtype=str),np.asarray(kept_symbols,dtype=str),np.full(n,record_id,dtype=str),np.full(n,patient_group,dtype=str),np.asarray(ann_kept,dtype=np.int64),np.asarray(starts,dtype=np.int64),np.asarray(ends,dtype=np.int64),edge,nonbeat)
+    # ``dtype=str`` in NumPy means one-character Unicode (U1), which silently
+    # truncates identifiers. Preserve the complete provenance strings explicitly.
+    record_dtype=f"<U{max(1,len(str(record_id)))}"
+    group_dtype=f"<U{max(1,len(str(patient_group)))}"
+    return SegmentBatch(seg,np.asarray(labels,dtype=str),np.asarray(kept_symbols,dtype=str),np.full(n,record_id,dtype=record_dtype),np.full(n,patient_group,dtype=group_dtype),np.asarray(ann_kept,dtype=np.int64),np.asarray(starts,dtype=np.int64),np.asarray(ends,dtype=np.int64),edge,nonbeat)
