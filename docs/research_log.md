@@ -103,3 +103,27 @@ The source-label identity mapping is only an initial, auditable representation, 
 - `patient_groups` contains record-derived pseudonyms for most records, not verified patient identities. MIT-BIH is described as 48 records from 47 subjects, and the 201/202 shared-tape relationship is documented; complete record-to-subject mapping remains unavailable. The result guarantees no overlap by record and known group keys but cannot claim verified patient-held-out evaluation for all records.
 - Review whether this random grouped split's sparse/absent evaluation classes are appropriate before Day 5 model evaluation. Also resolve the task's target label taxonomy before training.
 - No model, class balancing, augmentation, federated learning, privacy, blockchain, or proposed algorithm was implemented. No commit or push was made.
+
+# Day 5 — First centralized 1D CNN
+
+**Date:** 2026-10-04
+
+## Completed
+
+- Reviewed `AGENTS.md`, Day 2 dataset exploration, Day 3 preprocessing, and Day 4 split documentation/code before model implementation.
+- Confirmed train and validation segments have stored shape `(216, 2)` and are mapped to 15 distinct source-symbol labels. The model receives channels-first tensors `(batch, 2, 216)`. Training has all 15 classes; validation lacks `E`, `Q`, `R`, `S`, and `e` under the fixed group split.
+- Added `src/models/cnn1d.py` (three Conv1D blocks, batch normalization, ReLU, max pooling, adaptive global average pooling, dropout, and 15-logit linear head), with 10,127 trainable parameters.
+- Added a configurable training runner that opens only the explicit train and validation partitions. No test partition was opened. No reweighting, balancing, augmentation, or test evaluation was performed.
+- Executed all five configured epochs from seed 42, batch size 256, Adam at learning rate 0.001, cross-entropy loss, CPU, and eight CPU threads. Training completed in about 30.5 seconds; model, history, and figure were saved under `results/`.
+- Added and executed `notebooks/04_centralized_baseline.ipynb`, architecture/results documentation, and three model initialization/forward-pass tests. The three model tests passed.
+
+## Actual run metrics
+
+- Epoch 1: train loss 0.7918, train accuracy 0.8195; validation loss 1.2786, accuracy 0.6853, macro-F1 0.1737.
+- Epoch 5: train loss 0.1595, train accuracy 0.9598; validation loss 1.8939, accuracy 0.7004, macro-F1 0.1351.
+- Best checkpoint by validation loss: epoch 1. Validation macro-F1 is computed over all 15 configured labels with zero for unsupported labels; five labels are absent in validation.
+- Training loss reduction alongside worsening validation loss after epoch 1 is an overfitting warning. No test metric or generalization conclusion is reported.
+
+## Open decisions
+
+The source-symbol identity mapping is still provisional, and validation/test support is inadequate for several rare labels under the current split. Review the target label definition, class support, and any revised split protocol before treating this as a definitive centralized baseline. The current checkpoint only represents a short exploratory run. No federated learning, differential privacy, homomorphic encryption, blockchain, or proposed algorithm was implemented. No commit or push was made.
