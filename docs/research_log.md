@@ -127,3 +127,25 @@ The source-label identity mapping is only an initial, auditable representation, 
 ## Open decisions
 
 The source-symbol identity mapping is still provisional, and validation/test support is inadequate for several rare labels under the current split. Review the target label definition, class support, and any revised split protocol before treating this as a definitive centralized baseline. The current checkpoint only represents a short exploratory run. No federated learning, differential privacy, homomorphic encryption, blockchain, or proposed algorithm was implemented. No commit or push was made.
+
+# Day 6 — Centralized CNN test evaluation
+
+**Date:** 2026-10-04
+
+## Completed
+
+- Evaluated the frozen Day 5 checkpoint on the Day 4 held-out test partition only. The reusable evaluation module loads only `data/splits/mitbih_v1/test/`; it does not open training or validation samples or update model weights.
+- Generated predictions and softmax probabilities for all 15,559 test segments from seven record shards.
+- Saved the labeled numerical confusion matrix, publication-quality confusion and ROC plots, machine-readable and human-readable class reports, per-class and aggregate metrics, and prediction/provenance arrays under `results/`.
+- Created and successfully executed `notebooks/05_model_evaluation.ipynb`. No test-set result was used to retrain or tune the model. Raw and split datasets were not modified.
+
+## Actual test metrics
+
+- Accuracy 0.7688; macro precision 0.1510; macro recall (all 15 configured labels with zero for absent labels) 0.1431; macro F1 0.1399; weighted F1 0.7208.
+- Macro sensitivity over the eight supported classes 0.2683; weighted sensitivity 0.7688. Macro specificity over all 15 one-vs-rest classes 0.9664; support-weighted specificity 0.7270.
+- Macro OVR AUROC 0.6238 over eight classes with test positives; weighted OVR AUROC 0.9004; micro OVR AUROC 0.9624.
+- Classes `A`, `F`, `L`, `Q`, and `a` had zero F1 despite positive support; `L` had support 2,001 and zero recall. Sensitivity/AUROC are undefined for `E`, `J`, `R`, `S`, `e`, `f`, and `j`, which have no test positives under the Day 4 split.
+
+## Limitations
+
+The macro/weighted/micro summaries differ substantially under class imbalance. Validation/test split support is inadequate or absent for several labels, and person-level identity is not fully available beyond the known 201/202 grouping. Specificity is reported with its one-vs-rest formula and must not be interpreted without sensitivity/F1. The test metrics are for this model and this split only; they do not establish population performance. No federated learning, privacy mechanism, blockchain, or proposed algorithm was implemented. No commit or push was made.
