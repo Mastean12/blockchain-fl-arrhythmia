@@ -236,3 +236,48 @@ Severe imbalance (`N` is 65.5% of the test set). `A`, `F`, `L`, `Q`, and `a` hav
 4. do not claim a federated gain on classes that this test set cannot evaluate.
 
 The Day 8 questions about taxonomy and target definition remain open. If they are resolved later, the result must be a new versioned baseline. No federated learning, privacy mechanism, blockchain, or proposed algorithm was implemented in this step.
+
+
+# Day 10 — Federated learning baseline (FedAvg)
+
+**Date:** 2026-10-05
+
+## Completed
+
+- Implemented simulated FedAvg in `src/federated/`: configuration, group-level client partitioning, train-only client datasets, client update, sample-weighted FedAvg aggregation, round orchestration, per-round validation, one-time test evaluation, communication-cost calculation, and figures. The `centralized_cnn_v1` architecture and `src/models/` are unchanged.
+- Added `configs/federated/fedavg_v1.json`, `tests/test_federated.py` (10 tests), the executed notebook `notebooks/07_federated_fedavg_baseline.ipynb` (the single official run), and `docs/federated_learning_baseline.md`.
+
+## Configuration
+
+- **Clients:** 5, built from the 33 training groups only. Strategy `random_group_equal_count`: seeded (42) permutation of whole groups into 7/7/7/6/6 groups, holding 16,406 / 18,698 / 16,563 / 13,946 / 11,937 segments. No validation or test data is assigned, and there is no balancing.
+- **Training:** 20 rounds, 1 local epoch, full participation (5 clients per round), Adam with lr 0.001 reset each round, batch size 256, unweighted cross-entropy, seed 42, same initial weights as the centralized model.
+- **Selection:** the round with minimum validation loss, the same rule as the baseline.
+
+## Results
+
+- **Selected round:** 3 (validation loss 1.1894).
+- **Test (evaluated once):** accuracy 0.7069, macro-F1 0.0848, weighted-F1 0.6574, macro OvR AUROC 0.6733.
+- **Compared with `centralized_cnn_v1`**, FedAvg **degrades** performance: accuracy −0.062, macro-F1 −0.055, weighted-F1 −0.063.
+  - The global model predicts only `N` and `V` on test. Paced `/` F1 falls from 0.6694 to 0 (1,900 of 2,078 predicted as `V`), and 1,961 of 2,001 `L` beats are predicted as `V`.
+  - `V` F1 falls from 0.5276 to 0.3058, and `N` F1 rises from 0.9008 to 0.9669.
+  - `A`, `F`, `L`, `Q`, and `a` have zero F1 under both models, and seven classes remain unevaluable.
+  - AUROC rises (macro 0.6238 → 0.6733; `L` 0.6593 → 0.9913) and weighted specificity rises. This reflects score ranking and the absence of rare-class predictions, not better decisions.
+- **Communication:** a 41,428-byte payload per model transfer, 414,280 bytes per round, and 8.29 MB in total over 20 rounds. This is analytical, not network-measured.
+
+## Convergence observations
+
+Rounds 0–1 predict all `N`. Validation loss is lowest at round 3 and then rises while client training loss keeps falling (0.4455 → 0.1922), the same overfitting pattern as the centralized run. Validation macro-F1 peaks at 0.0913 (round 8), below the centralized validation macro-F1 of 0.1737 in every round. Validation accuracy collapses in rounds 18–20 (to 0.5907). client_04 has the highest local loss throughout. A re-run of rounds 1–3 reproduced the saved global model bit-identically.
+
+## Limitations
+
+This is a simulation on one public database; the clients are not hospitals. There is no privacy guarantee and no blockchain, and clients are assumed honest. It is a single seed and partition with no confidence intervals. Training budgets differ (3 local epochs at the selected round against 1 centralized epoch). The label skew is extreme: `/` and `L` are each present on only 2 of 5 clients. All `centralized_cnn_v1` limitations still apply, including 8 of 15 classes with test support and inferred subject-equivalence groups rather than verified patient IDs.
+
+## Unresolved questions
+
+- How much of the degradation comes from label non-IID partitioning versus client drift, optimizer reset, or BatchNorm averaging? Candidate one-factor ablations: an IID-like stratified group partition, other local-epoch counts, and keeping BatchNorm statistics local.
+- Is the collapse to `N`/`V` stable across seeds and partitions? Repeated runs are needed before any FL-versus-centralized conclusion.
+- Should later comparisons match the training budget (sample passes) between centralized and federated training?
+- Given that per-class AUROC is high while argmax recall is zero (for example `L`), should the evaluation protocol add threshold-independent or calibrated decision analyses? Any such change must be versioned and applied to both baselines.
+- The taxonomy questions from Day 8 remain open.
+
+No privacy, encryption, blockchain, attack, or proposed-algorithm code was implemented. The work was committed locally after validation; nothing was pushed.
