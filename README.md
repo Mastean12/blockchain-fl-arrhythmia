@@ -49,4 +49,4 @@ Use Python 3.12 and the repository virtual environment. In VS Code, select `.ven
 python -m pip install -r requirements.txt
 ```
 
-No datasets or implementation code are included at this setup stage.
+Datasets are not included in the repository. The current status is a frozen centralized baseline, defined in [`docs/baseline_freeze.md`](docs/baseline_freeze.md); progress is recorded in [`docs/research_log.md`](docs/research_log.md).

@@ -206,3 +206,33 @@ The local PhysioNet introduction reports 48 records from 47 subjects and identif
 - What evaluation claims are supportable for `S`, `e`, and `E`, given their occurrence in only one, one, and two subject groups respectively?
 - After the target taxonomy and evaluation objective are fixed, does the split need a new version, and what class coverage is feasible without subject leakage?
 - How much of the weak class performance reflects the mapping/task definition, data support, model behavior, or split composition? No causal conclusion is established by this audit.
+
+
+# Day 9 — Centralized baseline freeze
+
+**Date:** 2026-10-05
+
+## Completed
+
+- Froze the centralized baseline `centralized_cnn_v1` and documented it in `docs/baseline_freeze.md` (full record) and `docs/baseline_specification.md` (compact specification with artifact paths and SHA-256 hashes).
+- Verified the freeze against the current artifacts. All 111 hashed files under `results/`, `data/splits/`, `configs/`, and `src/` match the Day 8.5 verification. The checkpoint loads strictly with 10,127 parameters. Running it again on the test set without saving anything reproduced the stored test predictions exactly. The stored predictions reproduce the saved accuracy, macro-F1, and confusion matrix.
+- Updated an outdated status sentence in `README.md`.
+
+## Baseline definition
+
+MIT-BIH v1.0.0, 48 records and 109,460 beat windows of `[216, 2]` samples. Processing is a 0.5–40 Hz zero-phase Butterworth band-pass, windows from 0.2 s before to 0.4 s after each beat, and per-segment per-channel z-scoring. The 15 beat symbols map to themselves (no merges); 8 event symbols are excluded. The split is `mitbih_split_v1` (seed 42) over 47 inferred subject-equivalence groups with 201/202 grouped: 77,550 train, 16,351 validation, and 15,559 test segments (test records 100, 101, 107, 113, 214, 219, 233). No group appears in more than one split. The model is a 3-block Conv1D CNN with 10,127 parameters, trained with Adam (learning rate 0.001), batch size 256, unweighted cross-entropy, 5 epochs, and seed 42. The checkpoint is from epoch 1, the epoch with minimum validation loss. Test results: accuracy 0.7688, macro-F1 0.1399, weighted-F1 0.7208, macro OvR AUROC 0.6238 over 8 defined classes.
+
+## Important limitations
+
+Severe imbalance (`N` is 65.5% of the test set). `A`, `F`, `L`, `Q`, and `a` have zero F1 despite test support, and only 8 of 15 classes have any test support. The 47 groups are inferred from the published subject count; explicit patient IDs are not available for every record, so this is not independently verified patient-level separation. There is one small fixed test set without confidence intervals, an overfitting warning, and a provisional taxonomy. Accuracy alone overstates performance, and no clinical claim is supported.
+
+## Decision before Federated Learning
+
+**READY, with conditions.** The Day 7 blockers were that the taxonomy, subject separation, and evaluation protocol had not been reviewed. Day 8 and Day 8.5 completed those reviews, and the baseline is now fixed and reproducible as a comparator. Federated experiments may begin, provided that they:
+
+1. use the same taxonomy, split, preprocessing, model, and evaluation protocol unless one factor is deliberately changed;
+2. report macro, per-class, and undefined metrics alongside accuracy;
+3. derive client partitions only from training groups, keeping the validation and test groups fixed;
+4. do not claim a federated gain on classes that this test set cannot evaluate.
+
+The Day 8 questions about taxonomy and target definition remain open. If they are resolved later, the result must be a new versioned baseline. No federated learning, privacy mechanism, blockchain, or proposed algorithm was implemented in this step.
