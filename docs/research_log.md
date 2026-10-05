@@ -371,3 +371,73 @@ The BatchNorm-only intervention does **not** materially change the minority-clas
 - Day 8 taxonomy questions remain open.
 
 No privacy, encryption, blockchain, attack, or proposed-algorithm code was implemented. Nothing was committed or pushed.
+
+
+# Day 13 — Client-level differential privacy (DP-FedAvg)
+
+**Date:** 2026-10-05
+
+## Purpose
+
+This is a privacy-only intervention on the frozen standard FedAvg setup: client-level DP via per-client update clipping and Gaussian noise added at server aggregation. Full report: `docs/differential_privacy.md`. Outputs: `results/privacy/`.
+
+## Implementation
+
+- `src/federated/privacy.py`:
+  - L2 clipping of each client's full floating-point state update, covering weights, biases, BatchNorm affine parameters, and running statistics.
+  - Sample-weighted aggregation with fixed public weights.
+  - Gaussian noise N(0, (z · C · max p_k)²), giving sensitivity C · max p_k under add/remove-one-client adjacency.
+  - A seeded per-round noise stream.
+  - The accountant.
+- **Accountant:** no DP library is installed, so one is implemented and documented. With full participation, T Gaussian rounds compose exactly to μ-GDP (μ = √T / z; Dong, Roth & Su 2019), and ε comes from the analytic Gaussian conversion (Balle & Wang 2018). RDP (Mironov 2017) is reported as an upper-bound cross-check. q < 1 is rejected.
+- **Integration:** an optional `privacy` section in `run_fedavg.py`. It cannot be combined with local BatchNorm, and the default path still reproduces the official Day 10 model bit-identically. The paired comparison module was generalised to any one-factor arm; it reproduces the FedBN tables exactly.
+- **Tests:** 11 new (`tests/test_federated_privacy.py`), 50 in total.
+
+## Declared configuration (fixed before running)
+
+| Setting | Value |
+|---|---|
+| Privacy unit | One client |
+| Clipping norm C | 1.0 (a priori) |
+| Noise multiplier z | 2.69 (minimum for ε ≤ 8 is 2.6843) |
+| δ | 10⁻⁵ |
+| Client sampling rate q | 1.0 |
+| Rounds T | 20 |
+| Seeds | 42, 123, 2024; noise stream seed · 1000003 + 7919 + round |
+| Resulting ε | **7.98** (GDP; RDP bound 9.36) |
+
+Partition, training, round selection, and the single test evaluation are identical to Day 11, and runs are paired by seed.
+
+## Results
+
+- **Selected round:** 0 in all 3 seeds. No DP-trained round beat the untrained initial model on validation loss.
+- **Test results** therefore describe the initial networks:
+
+| Seed | Accuracy | Macro-F1 | Weighted-F1 | Macro AUROC | Predictions |
+|---|---:|---:|---:|---:|---|
+| 42 | 0.6554 | 0.0528 | 0.5189 | 0.4244 | all `N` |
+| 123 | 0.0778 | 0.0096 | 0.0112 | 0.5823 | all `V` |
+| 2024 | 0.0071 | 0.0081 | 0.0094 | 0.6320 | mostly `Q`/`e` |
+
+- **Paired degradation against FedAvg:** macro-F1 −0.032 / −0.089 / −0.064 (−38% / −90% / −89%), accuracy −0.05 / −0.62 / −0.56.
+- **3-seed means:** accuracy 0.247 ± 0.356 against FedAvg 0.657 ± 0.076; macro-F1 0.024 ± 0.025 against 0.085 ± 0.013.
+- **Noise dominated the signal:** the noise-to-signal ratio was 63–69 per round, matching the a priori estimate of about 65. All client updates were clipped in every round. The per-coordinate noise (about 0.63) is 4–11× the initial weight scale. Noisy BatchNorm variances were clamped to 0. Validation loss was 1.3·10⁶ to 3·10¹² after round 1.
+- **Communication:** DP adds 0 bytes (8.29 MB over 20 rounds, the same as FedAvg). No material wall-clock increase was observed (timing not controlled).
+
+## Interpretation
+
+At client-level ε = 7.98 with only 5 clients, DP-FedAvg destroys utility. This is consistent with the noise scale required to hide one of 5 clients (sensitivity about C/4 against a signal of at most C). It does not show that DP is unusable for this task in general: other privacy units, more clients, other ε values, and DP-compatible normalisation were not tested. The guarantee is central DP with a trusted server, it covers all 20 released models, and the logged unclipped-norm diagnostics are outside it.
+
+## Fixes made during Day 13
+
+- The `title` parameter of `plot_robustness_convergence` was shadowed by a loop variable, so the Day 12 FedBN convergence figure had the wrong suptitle. It was fixed and that one figure regenerated from saved histories.
+- Validation-loss panels now switch to a log axis when values span more than 50×.
+
+## Unresolved questions
+
+- Record-level DP-SGD within clients as an alternative privacy unit, with its own accounting and the caveat that segments from one record are correlated.
+- An ε sweep to map the utility-privacy curve, and the effect of more (simulated) clients.
+- DP-compatible normalisation would need a deliberate, versioned architecture change, which is out of scope under the frozen model.
+- Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
+
+No homomorphic encryption, blockchain, attack, or proposed-algorithm code was implemented. Nothing was committed or pushed.

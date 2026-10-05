@@ -27,6 +27,7 @@ from .evaluation import (communication_cost, compare_with_centralized, evaluate_
 from .fedavg import (batchnorm_state_keys, client_seed, client_start_state, client_update, fedavg_aggregate,
                      get_model_state, select_clients, set_model_state)
 from .partition import build_client_partition, client_distribution_tables
+from .privacy import dp_fedavg_aggregate, noise_generator, validate_privacy_config
 from . import plots
 
 
@@ -53,7 +54,7 @@ def apply_overrides(config, overrides):
     config = copy.deepcopy(config)
     for section, values in (overrides or {}).items():
         if isinstance(values, dict):
-            config[section].update(values)
+            config.setdefault(section, {}).update(values)
         else:
             config[section] = values
     return config
@@ -84,6 +85,12 @@ def prepare_partition(config, output_root=None, write=True):
 def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_test=True, output_root=None,
                    overrides=None, overwrite=False, log=print, comparison_prefix=""):
     config = apply_overrides(load_federated_config(config_path), overrides)
+    privacy = config.get("privacy")
+    accounting = None
+    if privacy is not None:
+        if config["aggregation"].get("batchnorm", "aggregate") != "aggregate":
+            raise ValueError("Differential privacy is a separate one-factor experiment; do not combine with local BatchNorm")
+        accounting = validate_privacy_config(privacy, config["training"]["rounds"], config["participation"]["fraction"])
     root = Path(output_root or config["output_root"])
     exp = config["experiment_id"]
     model_dir = root / "models" / "federated"
@@ -126,6 +133,7 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     bn_keys = batchnorm_state_keys(global_model) if bn_mode == "local" else []
     local_bn = {}
     client_validation = []
+    dp_rounds, dp_clients = [], []
 
     history = [{"round": 0, "participants": 0, "client_train_loss_weighted": None,
                 "client_train_accuracy_weighted": None, "elapsed_seconds": 0.0,
@@ -154,7 +162,23 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
                                    "num_samples": update["num_samples"], "train_loss": update["train_loss"],
                                    "train_accuracy": update["train_accuracy"]})
         counts = [u["num_samples"] for u in updates]
-        global_state = fedavg_aggregate([u["state"] for u in updates], counts)
+        if privacy is None:
+            global_state = fedavg_aggregate([u["state"] for u in updates], counts)
+        else:
+            global_state, dp = dp_fedavg_aggregate(
+                global_state, [u["state"] for u in updates], counts, float(privacy["clipping_norm"]),
+                float(privacy["noise_multiplier"]), noise_generator(seed, privacy["noise_seed_offset"], round_index))
+            # Diagnostics below use unclipped norms: they are NOT covered by the DP guarantee and would not
+            # be released in a deployment. They are kept only to interpret this simulation.
+            dp_rounds.append({"round": round_index, "sensitivity": dp["sensitivity"], "noise_std": dp["noise_std"],
+                              "noise_l2_norm": dp["noise_l2_norm"],
+                              "aggregate_signal_l2_norm": dp["aggregate_signal_l2_norm"],
+                              "noise_to_signal_ratio": dp["noise_l2_norm"] / max(dp["aggregate_signal_l2_norm"], 1e-12),
+                              "clients_clipped": int(sum(dp["clipped"])), "median_update_norm": float(np.median(dp["update_norms"])),
+                              "max_update_norm": float(max(dp["update_norms"])), "dimension": dp["dimension"]})
+            for k, norm_value, was_clipped in zip(selected, dp["update_norms"], dp["clipped"]):
+                dp_clients.append({"round": round_index, "client_id": partition["clients"][k]["client_id"],
+                                   "update_l2_norm_unclipped": norm_value, "clipped": was_clipped})
         set_model_state(global_model, global_state)
         weights = np.asarray(counts, dtype=float) / sum(counts)
         row = {"round": round_index, "participants": len(selected),
@@ -186,6 +210,15 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     torch.save(artifact, model_path)
     if client_validation:
         _write_csv(metrics_dir / f"{exp}_client_validation_history.csv", client_validation)
+    if privacy is not None:
+        _write_csv(metrics_dir / f"{exp}_dp_round_diagnostics.csv", dp_rounds)
+        _write_csv(metrics_dir / f"{exp}_dp_client_update_norms.csv", dp_clients)
+        _write_json(metrics_dir / f"{exp}_privacy_accounting.json",
+                    {"privacy_config": privacy, "accounting": accounting, "training_seed": seed,
+                     "partition_seed": config["partition"]["seed"],
+                     "noise_seed_rule": "seed * 1000003 + noise_seed_offset + round",
+                     "selection_note": "Round selection uses only the validation split, which is not client data; "
+                                       "selecting among released models is post-processing."})
     _write_csv(metrics_dir / f"{exp}_round_history.csv", history)
     _write_csv(metrics_dir / f"{exp}_client_round_history.csv", client_history)
     comm = communication_cost(best["state"], participants_per_round, trainable)
@@ -209,6 +242,8 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         "model_path": str(model_path).replace("\\", "/"), "test_evaluated": False,
         "centralized_validation_reference_epoch1": reference,
     }
+    if privacy is not None:
+        run_summary["privacy"] = {"config": privacy, "accounting": accounting}
     if bn_mode == "local":
         run_summary["batchnorm_mode"] = bn_mode
         run_summary["batchnorm_state_keys"] = bn_keys
@@ -216,7 +251,8 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         result, test_summary = evaluate_test_once(global_model, split_root / "test", class_names, root, exp,
                                                   device, eval_bs, overwrite)
         plots.plot_confusion_matrix(result["confusion_matrix"], class_names,
-                                    ("FedBN-style evaluation model" if bn_mode == "local" else "FedAvg global model")
+                                    ("FedBN-style evaluation model" if bn_mode == "local"
+                                     else "DP-FedAvg global model" if privacy is not None else "FedAvg global model")
                                     + f" (round {best['round']}) — held-out test confusion matrix",
                                     figures_dir / f"{exp}_confusion_matrix.png")
         aggregate_rows, per_class_rows = compare_with_centralized(result["aggregate"], result["per_class"], label=exp)

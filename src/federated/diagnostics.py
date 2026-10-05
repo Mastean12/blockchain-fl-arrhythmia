@@ -42,6 +42,7 @@ def paired_comparison(config_path="configs/federated/fedbn_diagnostic_v1.json"):
     comparator = config["comparator"]
     class_names = list(load_class_to_index(load_federated_config(config["base_config"])["data"]["label_config"]))
     root = Path(config["output_root"])
+    arm = config.get("arm_label", "fedbn")
     diag = collect_results(config_path)
     base_runs = pd.read_csv(comparator["runs_table"])
     paired, counts, per_class, personalised = [], [], [], []
@@ -50,32 +51,33 @@ def paired_comparison(config_path="configs/federated/fedbn_diagnostic_v1.json"):
         d = diag["runs"].set_index("run_id").loc[run_id]
         b = base_runs.set_index("run_id").loc[base_id]
         for metric in PAIRED_METRICS:
-            paired.append({"seed": seed, "metric": metric, "fedavg": float(b[metric]), "fedbn": float(d[metric]),
-                           "delta_fedbn_minus_fedavg": float(d[metric]) - float(b[metric])})
-        for arm, rid, tables in (("fedavg", base_id, Path(comparator["tables_dir"])),
-                                 ("fedbn", run_id, root / "tables" / "federated")):
+            paired.append({"seed": seed, "metric": metric, "fedavg": float(b[metric]), arm: float(d[metric]),
+                           f"delta_{arm}_minus_fedavg": float(d[metric]) - float(b[metric])})
+        for arm_name, rid, tables in (("fedavg", base_id, Path(comparator["tables_dir"])),
+                                      (arm, run_id, root / "tables" / "federated")):
             pc = _predicted_counts(tables / f"{rid}_confusion_matrix.csv", class_names)
             total = sum(pc.values())
-            counts.append({"seed": seed, "arm": arm, "run_id": rid, **pc,
+            counts.append({"seed": seed, "arm": arm_name, "run_id": rid, **pc,
                            "share_N_or_V": (pc["N"] + pc["V"]) / total,
                            "classes_predicted": sum(1 for v in pc.values() if v > 0)})
             metrics = pd.read_csv(tables / f"{rid}_per_class_metrics.csv", keep_default_na=False, na_values=[""])
             for row in metrics.to_dict("records"):
                 if row["support"] > 0:
-                    per_class.append({"seed": seed, "arm": arm, "label": row["label"], "support": int(row["support"]),
+                    per_class.append({"seed": seed, "arm": arm_name, "label": row["label"], "support": int(row["support"]),
                                       "precision": row["precision"], "recall": row["recall"], "f1_score": row["f1_score"],
                                       "specificity": row["specificity"], "auroc_ovr": row["auroc_ovr"]})
         history_path = root / "metrics" / "federated" / f"{run_id}_client_validation_history.csv"
         selected = int(d["selected_round"])
-        clients = pd.read_csv(history_path)
+        clients = pd.read_csv(history_path) if history_path.exists() else pd.DataFrame(columns=["round"])
         for row in clients[clients["round"] == selected].to_dict("records"):
             personalised.append({"seed": seed, "selected_round": selected, **row,
                                  "evaluation_model_val_macro_f1": float(d["val_macro_f1"]),
                                  "evaluation_model_val_accuracy": float(d["val_accuracy"])})
     paired = pd.DataFrame(paired)
-    summary = (paired.groupby("metric", sort=False)["delta_fedbn_minus_fedavg"]
+    summary = (paired.groupby("metric", sort=False)[f"delta_{arm}_minus_fedavg"]
                .agg(mean_delta="mean", min_delta="min", max_delta="max",
-                    seeds_fedbn_higher=lambda s: int((s > 0).sum()), seeds_fedbn_lower=lambda s: int((s < 0).sum()))
+                    **{f"seeds_{arm}_higher": lambda s: int((s > 0).sum()),
+                       f"seeds_{arm}_lower": lambda s: int((s < 0).sum())})
                .reset_index())
     return {"paired": paired, "paired_summary": summary, "prediction_counts": pd.DataFrame(counts),
             "per_class": pd.DataFrame(per_class), "personalised_validation": pd.DataFrame(personalised)}
@@ -87,8 +89,10 @@ def write_diagnostic_reports(config_path="configs/federated/fedbn_diagnostic_v1.
     root = Path(config["output_root"])
     tables, figures = root / "tables", root / "figures"
     results = paired_comparison(config_path)
+    prefix = config.get("comparison_prefix", "fedbn_vs_fedavg")
     for name, frame in results.items():
-        frame.to_csv(tables / f"fedbn_vs_fedavg_{name}.csv", index=False)
+        if not frame.empty:
+            frame.to_csv(tables / f"{prefix}_{name}.csv", index=False)
     payload = batchnorm_payload()
     (root / "metrics").mkdir(parents=True, exist_ok=True)
     (root / "metrics" / "fedbn_payload.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -96,5 +100,9 @@ def write_diagnostic_reports(config_path="configs/federated/fedbn_diagnostic_v1.
     reference = {"test_accuracy": central["accuracy"], "test_macro_f1": central["macro_f1"],
                  "test_weighted_f1": central["weighted_f1"],
                  "test_macro_recall": central["macro_recall_all_15_labels_zero_for_no_support"]}
-    plots.plot_paired_slopes(results["paired"], reference, figures / "fedbn_vs_fedavg_paired.png")
+    plots.plot_paired_slopes(results["paired"], reference, figures / f"{prefix}_paired.png",
+                             arm=config.get("arm_label", "fedbn"),
+                             arm_title=config.get("arm_title", "FedBN-style\n(local BatchNorm)"),
+                             suptitle=config.get("paired_title", "Seed-paired comparison: same partition, initialization "
+                                                 "and training order; only BatchNorm handling differs"))
     return results, payload

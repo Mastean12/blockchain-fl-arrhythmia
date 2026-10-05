@@ -1,0 +1,52 @@
+{
+  "robustness_id": "dp_fedavg_v1",
+  "study_title": "Client-level DP-FedAvg (z=2.69, C=1.0)",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [
+    42,
+    123,
+    2024
+  ],
+  "seed_controls": [
+    "random_seed",
+    "partition.seed",
+    "privacy noise stream (seed * 1000003 + noise_seed_offset + round)"
+  ],
+  "primary_partition": "random_group_equal_count",
+  "diagnostic_partitions": [],
+  "run_id_template": "dp_fedavg_v1_{partition_label}_s{seed}",
+  "partition_labels": {
+    "random_group_equal_count": "natural"
+  },
+  "extra_overrides": {
+    "privacy": {
+      "enabled": true,
+      "mechanism": "DP-FedAvg, client level: per-client L2 clipping of the full floating-point state update, sample-weighted aggregation with fixed public weights, Gaussian noise added once to the aggregate by a trusted server",
+      "privacy_unit": "client",
+      "privacy_unit_description": "All training data of one simulated client (5 clients); add/remove-one-client adjacency with the other clients' aggregation weights held fixed",
+      "clip_scope": "All floating-point state entries: conv/linear weights and biases, BatchNorm affine parameters and running statistics",
+      "clipping_norm": 1.0,
+      "clipping_norm_rationale": "Fixed a priori (not tuned on client, validation or test data)",
+      "noise_multiplier": 2.69,
+      "noise_multiplier_rationale": "Smallest two-decimal value meeting target_epsilon at delta over 20 full-participation rounds (GDP accountant requires z >= 2.6843)",
+      "target_epsilon": 8.0,
+      "delta": 1e-05,
+      "accountant": "gdp_full_participation",
+      "accountant_description": "T-fold composition of the Gaussian mechanism is exactly mu-GDP with mu = sqrt(T)/z (Dong, Roth & Su 2019); epsilon from the analytic Gaussian conversion (Balle & Wang 2018). RDP (Mironov 2017) reported as an upper-bound cross-check.",
+      "client_sampling_rate": 1.0,
+      "rounds": 20,
+      "noise_seed_offset": 7919
+    }
+  },
+  "comparator": {
+    "description": "Day 11 standard FedAvg, natural partition, same seeds (paired: same partition, initialization and training order)",
+    "runs_table": "results/robustness/tables/robustness_runs.csv",
+    "tables_dir": "results/robustness/tables/federated",
+    "run_id_template": "fedavg_v1_natural_s{seed}"
+  },
+  "arm_label": "dp_fedavg",
+  "comparison_prefix": "dp_vs_fedavg",
+  "output_root": "results/privacy",
+  "arm_title": "DP-FedAvg\n(eps=7.98, delta=1e-5)",
+  "paired_title": "Seed-paired comparison: same partition, initialization and training order; only client-level DP differs"
+}

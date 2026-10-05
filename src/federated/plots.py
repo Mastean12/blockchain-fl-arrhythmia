@@ -141,7 +141,7 @@ def plot_robustness_convergence(history, reference, path, title="FedAvg robustne
                              squeeze=False, sharey="col")
     for r, partition in enumerate(partitions):
         subset = history[history["partition"] == partition]
-        for c, (key, title) in enumerate(columns):
+        for c, (key, panel_title) in enumerate(columns):
             ax = axes[r][c]
             _style(ax)
             for seed, run in subset.groupby("seed"):
@@ -153,7 +153,10 @@ def plot_robustness_convergence(history, reference, path, title="FedAvg robustne
                         markeredgecolor=color, markeredgewidth=1.5, linestyle="none")
             ax.axhline(reference[key], color=MUTED, linewidth=1.5, linestyle="--",
                        label="Centralized checkpoint (epoch 1)")
-            ax.set_title(f"{partition} partition — {title}", loc="left", fontsize=10, color=INK)
+            if key == "validation_loss" and history[key].max() > 50 * history[key].min():
+                ax.set_yscale("log")  # DP runs span many orders of magnitude
+                panel_title += " (log scale)"
+            ax.set_title(f"{partition} partition — {panel_title}", loc="left", fontsize=10, color=INK)
             ax.set_xlabel("Communication round", color=MUTED)
             if r == 0 and c == 0:
                 ax.legend(fontsize=8, frameon=False)
@@ -190,7 +193,9 @@ def plot_robustness_test_metrics(runs, reference, path, title="FedAvg robustness
     plt.close(fig)
 
 
-def plot_paired_slopes(paired, reference, path):
+def plot_paired_slopes(paired, reference, path, arm="fedbn", arm_title="FedBN-style\n(local BatchNorm)",
+                       suptitle="Seed-paired comparison: same partition, initialization and training order; only "
+                                "BatchNorm handling differs"):
     """Seed-paired slope chart: standard FedAvg vs the diagnostic arm, with the centralized value dashed."""
     panels = [("test_accuracy", "Test accuracy"), ("test_macro_f1", "Test macro-F1 (15 classes)"),
               ("test_weighted_f1", "Test weighted-F1"), ("test_macro_recall", "Test macro recall (15 classes)")]
@@ -201,14 +206,34 @@ def plot_paired_slopes(paired, reference, path):
         rows = paired[paired["metric"] == key]
         for _, row in rows.iterrows():
             color, marker = styles[row["seed"]]
-            ax.plot([0, 1], [row["fedavg"], row["fedbn"]], color=color, marker=marker, markersize=8, linewidth=2,
+            ax.plot([0, 1], [row["fedavg"], row[arm]], color=color, marker=marker, markersize=8, linewidth=2,
                     label=f"seed {row['seed']}")
         ax.axhline(reference[key], color=MUTED, linewidth=1.5, linestyle="--", label="centralized_cnn_v1")
-        ax.set_xticks([0, 1], ["FedAvg\n(Day 11)", "FedBN-style\n(local BatchNorm)"])
+        ax.set_xticks([0, 1], ["FedAvg\n(Day 11)", arm_title])
         ax.set_xlim(-0.35, 1.35)
         ax.set_title(title, loc="left", fontsize=11, color=INK)
     axes[0].legend(fontsize=8, frameon=False)
-    fig.suptitle("Seed-paired comparison: same partition, initialization and training order; only BatchNorm "
-                 "handling differs", fontsize=12, color=INK)
+    fig.suptitle(suptitle, fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def plot_dp_noise_vs_signal(diagnostics, path):
+    """Per-round L2 norm of the added noise vs the clipped weighted client signal (log scale), one line pair per seed."""
+    styles = _seed_style(diagnostics["seed"].unique())
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    _style(ax)
+    for seed, run in diagnostics.groupby("seed"):
+        color, marker = styles[seed]
+        ax.plot(run["round"], run["noise_l2_norm"], color=color, marker=marker, markersize=5, linewidth=2,
+                label=f"seed {seed}: noise")
+        ax.plot(run["round"], run["aggregate_signal_l2_norm"], color=color, marker=marker, markersize=5, linewidth=2,
+                linestyle=":", markerfacecolor="none", label=f"seed {seed}: clipped client signal")
+    ax.set_yscale("log")
+    ax.set_xlabel("Communication round", color=MUTED)
+    ax.set_ylabel("L2 norm of aggregate component", color=MUTED)
+    ax.set_title("DP-FedAvg: Gaussian noise vs clipped, weighted client signal per round (non-private diagnostic)",
+                 loc="left", fontsize=11, color=INK)
+    ax.legend(fontsize=8, frameon=False, ncol=3)
     fig.savefig(path, dpi=200)
     plt.close(fig)

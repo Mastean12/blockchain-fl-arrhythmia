@@ -1,0 +1,170 @@
+{
+  "centralized_validation_reference_epoch1": {
+    "validation_accuracy": 0.6853403461561984,
+    "validation_macro_f1": 0.1737207554842273
+  },
+  "client_segments": [
+    16406,
+    18698,
+    16563,
+    13946,
+    11937
+  ],
+  "config": {
+    "aggregation": {
+      "method": "FedAvg",
+      "weighting": "client_training_samples"
+    },
+    "data": {
+      "label_config": "configs/preprocessing/mitbih_v1.json",
+      "split_root": "data/splits/mitbih_v1"
+    },
+    "experiment_id": "dp_fedavg_v1_natural_s42",
+    "model": {
+      "architecture": "centralized_cnn_v1",
+      "class": "src.models.cnn1d.ECG1DCNN",
+      "dropout": 0.3
+    },
+    "model_selection": {
+      "metric": "validation_loss",
+      "mode": "min",
+      "split": "validation"
+    },
+    "output_root": "results",
+    "participation": {
+      "fraction": 1.0
+    },
+    "partition": {
+      "min_client_segments": 1000,
+      "num_clients": 5,
+      "seed": 42,
+      "strategy": "random_group_equal_count"
+    },
+    "privacy": {
+      "accountant": "gdp_full_participation",
+      "accountant_description": "T-fold composition of the Gaussian mechanism is exactly mu-GDP with mu = sqrt(T)/z (Dong, Roth & Su 2019); epsilon from the analytic Gaussian conversion (Balle & Wang 2018). RDP (Mironov 2017) reported as an upper-bound cross-check.",
+      "client_sampling_rate": 1.0,
+      "clip_scope": "All floating-point state entries: conv/linear weights and biases, BatchNorm affine parameters and running statistics",
+      "clipping_norm": 1.0,
+      "clipping_norm_rationale": "Fixed a priori (not tuned on client, validation or test data)",
+      "delta": 1e-05,
+      "enabled": true,
+      "mechanism": "DP-FedAvg, client level: per-client L2 clipping of the full floating-point state update, sample-weighted aggregation with fixed public weights, Gaussian noise added once to the aggregate by a trusted server",
+      "noise_multiplier": 2.69,
+      "noise_multiplier_rationale": "Smallest two-decimal value meeting target_epsilon at delta over 20 full-participation rounds (GDP accountant requires z >= 2.6843)",
+      "noise_seed_offset": 7919,
+      "privacy_unit": "client",
+      "privacy_unit_description": "All training data of one simulated client (5 clients); add/remove-one-client adjacency with the other clients' aggregation weights held fixed",
+      "rounds": 20,
+      "target_epsilon": 8.0
+    },
+    "random_seed": 42,
+    "runtime": {
+      "cpu_threads": 8,
+      "device": "cpu",
+      "evaluation_batch_size": 512,
+      "num_workers": 0
+    },
+    "training": {
+      "batch_size": 256,
+      "client_optimizer_state": "reset_each_round",
+      "learning_rate": 0.001,
+      "local_epochs": 1,
+      "loss": "CrossEntropyLoss",
+      "optimizer": "Adam",
+      "rounds": 20,
+      "shuffle_training": true
+    }
+  },
+  "experiment_id": "dp_fedavg_v1_natural_s42",
+  "final_round_validation": {
+    "client_train_accuracy_weighted": 0.05161831076724693,
+    "client_train_loss_weighted": 73.31596797301185,
+    "elapsed_seconds": 109.94077409999954,
+    "participants": 5,
+    "round": 20,
+    "validation_accuracy": 0.09436731698367072,
+    "validation_loss": 126352460170.92043,
+    "validation_macro_f1": 0.011502923917480019,
+    "validation_macro_precision": 0.07295412844036697,
+    "validation_macro_recall": 0.06667254452477517,
+    "validation_weighted_f1": 0.0163776263315151
+  },
+  "model_path": "results/privacy/models/federated/dp_fedavg_v1_natural_s42_global.pt",
+  "num_clients": 5,
+  "privacy": {
+    "accounting": {
+      "accountant": "GDP composition (Dong, Roth & Su 2019) + analytic Gaussian conversion (Balle & Wang 2018)",
+      "client_sampling_rate": 1.0,
+      "delta": 1e-05,
+      "epsilon": 7.979543723560064,
+      "epsilon_rdp_upper_bound": 9.359535227141418,
+      "mu_gdp": 1.66250407249055,
+      "noise_multiplier": 2.69,
+      "rdp_optimal_order": 3.8899999999999997,
+      "rounds": 20
+    },
+    "config": {
+      "accountant": "gdp_full_participation",
+      "accountant_description": "T-fold composition of the Gaussian mechanism is exactly mu-GDP with mu = sqrt(T)/z (Dong, Roth & Su 2019); epsilon from the analytic Gaussian conversion (Balle & Wang 2018). RDP (Mironov 2017) reported as an upper-bound cross-check.",
+      "client_sampling_rate": 1.0,
+      "clip_scope": "All floating-point state entries: conv/linear weights and biases, BatchNorm affine parameters and running statistics",
+      "clipping_norm": 1.0,
+      "clipping_norm_rationale": "Fixed a priori (not tuned on client, validation or test data)",
+      "delta": 1e-05,
+      "enabled": true,
+      "mechanism": "DP-FedAvg, client level: per-client L2 clipping of the full floating-point state update, sample-weighted aggregation with fixed public weights, Gaussian noise added once to the aggregate by a trusted server",
+      "noise_multiplier": 2.69,
+      "noise_multiplier_rationale": "Smallest two-decimal value meeting target_epsilon at delta over 20 full-participation rounds (GDP accountant requires z >= 2.6843)",
+      "noise_seed_offset": 7919,
+      "privacy_unit": "client",
+      "privacy_unit_description": "All training data of one simulated client (5 clients); add/remove-one-client adjacency with the other clients' aggregation weights held fixed",
+      "rounds": 20,
+      "target_epsilon": 8.0
+    }
+  },
+  "rounds": 20,
+  "selected_round_by_validation_loss": 0,
+  "selected_round_validation": {
+    "client_train_accuracy_weighted": null,
+    "client_train_loss_weighted": null,
+    "elapsed_seconds": 0.0,
+    "participants": 0,
+    "round": 0,
+    "validation_accuracy": 0.6936578802519724,
+    "validation_loss": 2.634322645117271,
+    "validation_macro_f1": 0.054608264423019054,
+    "validation_macro_precision": 0.046243858683464825,
+    "validation_macro_recall": 0.06666666666666667,
+    "validation_weighted_f1": 0.568191794158659
+  },
+  "software": {
+    "numpy": "2.5.3",
+    "torch": "2.14.1+cpu"
+  },
+  "test_evaluated": true,
+  "test_metrics": {
+    "accuracy": 0.6553763095314609,
+    "auroc_defined_class_count": 8,
+    "class_count": 15,
+    "macro_auroc_ovr_defined_classes": 0.42443139059821167,
+    "macro_f1": 0.052787699953408915,
+    "macro_precision": 0.043691753968764055,
+    "macro_recall_all_15_labels_zero_for_no_support": 0.06666666666666667,
+    "macro_sensitivity_supported_classes": 0.125,
+    "macro_specificity_all_classes": 0.9333333333333333,
+    "micro_auroc_ovr_flattened": 0.8190975230934971,
+    "micro_f1": 0.6553763095314609,
+    "micro_precision": 0.6553763095314609,
+    "micro_recall": 0.6553763095314609,
+    "weighted_auroc_ovr_defined_classes": 0.25564656699062144,
+    "weighted_f1": 0.518937119761788,
+    "weighted_precision": 0.4295181070950772,
+    "weighted_recall": 0.6553763095314609,
+    "weighted_sensitivity": 0.6553763095314609,
+    "weighted_specificity": 0.34462369046853913
+  },
+  "trainable_parameters": 10127,
+  "training_elapsed_seconds": 110.26719539999976,
+  "validation_segments": 16351
+}
