@@ -5,6 +5,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib.ticker import MaxNLocator  # noqa: E402
 import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
 
 FEDAVG_COLOR = "#2a78d6"     # categorical slot 1
 REFERENCE_COLOR = "#eb6834"  # categorical slot 2
@@ -474,4 +475,109 @@ def plot_ablation(runs, order, labels, path):
     fig.suptitle("Ablation of the proposed defense (frozen thresholds; test evaluated once per run)\n" + legend,
                  fontsize=10, color=INK)
     fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def _final_rows(utility):
+    """Key comparison rows for the final utility overview, in reading order."""
+    picks = [("centralized_cnn_v1", "centralized", "Centralized CNN (Day 6)"),
+             ("FedAvg robustness", "natural partition", "FedAvg (Day 11)"),
+             ("FedBN-style diagnostic", "local BatchNorm", "FedBN-style (Day 12)"),
+             ("DP-FedAvg (client-level)", "epsilon=7.98", "DP-FedAvg eps=7.98 (Day 13)"),
+             ("HE-FedAvg (CKKS)", "encrypted aggregation", "HE-FedAvg (Day 14)"),
+             ("FedAvg + blockchain recording", "recorded", "FedAvg + ledger (Day 16)")]
+    for cond in ("sign_flip", "scaled", "random_noise"):
+        picks.append(("FedAvg under attack (no defense)", cond, f"FedAvg, {cond.replace('_', ' ')} (Day 17)"))
+    for cond in ("clean", "sign_flip", "scaled", "random_noise"):
+        picks.append(("Proposed defense v1 (full)", cond, f"Defense v1, {cond.replace('_', ' ')} (Day 18)"))
+    for cond in ("clean", "sign_flip", "scaled", "random_noise"):
+        picks.append(("Final confirmation: fedavg_control", cond, f"FedAvg control, {cond.replace('_', ' ')} (Day 20)"))
+        picks.append(("Final confirmation: variant5", cond, f"Variant 5, {cond.replace('_', ' ')} (Day 20)"))
+    rows = []
+    for experiment, arm, label in picks:
+        match = utility[(utility["experiment"] == experiment) & (utility["arm"] == arm)]
+        if len(match):
+            rows.append((label, match.iloc[0]))
+    return rows
+
+
+def plot_final_overview(utility, path):
+    """Test accuracy and macro-F1 (mean +/- SD over seeds) for the key study arms."""
+    rows = _final_rows(utility)
+    fig, axes = plt.subplots(1, 2, figsize=(14, 0.36 * len(rows) + 1.6), layout="constrained", sharey=True)
+    y = np.arange(len(rows))
+    for ax, metric, title in ((axes[0], "accuracy", "Test accuracy"), (axes[1], "macro_f1", "Test macro-F1 (15 classes)")):
+        _style(ax)
+        ax.yaxis.grid(False)
+        for i, (label, row) in enumerate(rows):
+            mean, lo, hi = row[f"{metric}_mean"], row.get(f"{metric}_min"), row.get(f"{metric}_max")
+            color = REFERENCE_COLOR if "Day 20" in label and "Variant 5" in label else FEDAVG_COLOR
+            if "Centralized" in label:
+                color = INK
+            err = None if pd.isna(lo) or pd.isna(hi) else [[mean - lo], [hi - mean]]
+            ax.errorbar(mean, i, xerr=err, fmt="o", color=color, markersize=6, capsize=3, linewidth=1.5)
+        ax.set_title(title, loc="left", fontsize=11, color=INK)
+    axes[0].set_yticks(y, [f"{label}  (n={int(row['n_runs'])})" for label, row in rows], fontsize=8)
+    axes[0].invert_yaxis()
+    fig.suptitle("Study overview: held-out test utility (dot = mean over seeds; whiskers = min-max; descriptive, no significance test)",
+                 fontsize=12, color=INK)
+    fig.savefig(path, dpi=300)
+    plt.close(fig)
+
+
+def plot_final_confirmation(final_runs, path):
+    """Day 20 fresh seeds: FedAvg control (hollow) vs Variant 5 (filled) per condition; macro-F1 and breakdown rounds."""
+    conditions = ["clean", "sign_flip", "scaled", "random_noise"]
+    styles = _seed_style([int(s) for s in final_runs["seed"].unique()])
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.8), layout="constrained")
+    panels = [("test_accuracy", "Test accuracy"), ("test_macro_f1", "Test macro-F1 (15 classes)"),
+              ("nan_validation_rounds", "Rounds with NaN validation loss (of 20)")]
+    for ax, (metric, title) in zip(axes, panels):
+        _style(ax)
+        ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(len(conditions))))
+        for x, cond in enumerate(conditions):
+            for j, seed in enumerate(sorted(final_runs["seed"].unique())):
+                color, marker = styles[int(seed)]
+                dx = (j - 1) * 0.05
+                for arm, offset, filled in (("fedavg_control", -0.17, False), ("variant5", 0.17, True)):
+                    row = final_runs[(final_runs.arm == arm) & (final_runs.condition == cond) & (final_runs.seed == seed)]
+                    if len(row):
+                        kw = dict(color=color) if filled else dict(markerfacecolor="none", markeredgecolor=color,
+                                                                   markeredgewidth=1.8)
+                        ax.plot(x + offset + dx, row.iloc[0][metric], marker=marker, markersize=9, linestyle="none",
+                                label=f"seed {int(seed)}" if (filled and x == 0 and ax is axes[0]) else None, **kw)
+        ax.set_xticks(range(len(conditions)), [c.replace("_", " ") for c in conditions])
+        ax.set_xlim(-0.6, len(conditions) - 0.4)
+        ax.set_title(title, loc="left", fontsize=11, color=INK)
+    axes[0].plot([], [], marker="o", linestyle="none", markerfacecolor="none", markeredgecolor=MUTED, label="hollow: FedAvg control")
+    axes[0].plot([], [], marker="o", linestyle="none", color=MUTED, label="filled: Variant 5 defense")
+    axes[0].legend(fontsize=8, frameon=False, loc="lower left")
+    fig.suptitle("Independent confirmation on fresh seeds 101/202/303 (frozen thresholds; test evaluated once per run)",
+                 fontsize=12, color=INK)
+    fig.savefig(path, dpi=300)
+    plt.close(fig)
+
+
+def plot_final_costs(communication, computation, path):
+    """Communication (bytes per 20-round run) and computation (seconds) per component, log scale."""
+    fig, axes = plt.subplots(1, 2, figsize=(15, 4.6), layout="constrained")
+    for ax, frame, col, label, title in (
+            (axes[0], communication, "total_bytes_20_rounds_5_clients", "Bytes per 20-round run (log scale)",
+             "Communication"),
+            (axes[1], computation, "seconds", "Seconds (log scale)", "Computation")):
+        _style(ax)
+        ax.yaxis.grid(False)
+        names = frame.iloc[:, 0].tolist()
+        values = frame[col].astype(float).tolist()
+        ax.barh(range(len(names)), values, color=FEDAVG_COLOR, height=0.6)
+        for i, v in enumerate(values):
+            ax.text(v * 1.15, i, f"{v:,.3g}", va="center", fontsize=8, color=INK)
+        ax.set_yticks(range(len(names)), names, fontsize=8)
+        ax.invert_yaxis()
+        ax.set_xscale("log")
+        ax.set_xlim(min(values) / 3, max(values) * 20)
+        ax.set_xlabel(label, color=MUTED)
+        ax.set_title(title, loc="left", fontsize=11, color=INK)
+    fig.suptitle("Measured or analytical costs of each component (sources in results/final/final_*.csv)", fontsize=12, color=INK)
+    fig.savefig(path, dpi=300)
     plt.close(fig)

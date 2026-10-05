@@ -1,0 +1,152 @@
+{
+  "centralized_validation_reference_epoch1": {
+    "validation_accuracy": 0.6853403461561984,
+    "validation_macro_f1": 0.1737207554842273
+  },
+  "client_segments": [
+    15183,
+    15760,
+    16836,
+    16159,
+    13612
+  ],
+  "config": {
+    "aggregation": {
+      "method": "FedAvg",
+      "weighting": "client_training_samples"
+    },
+    "data": {
+      "label_config": "configs/preprocessing/mitbih_v1.json",
+      "split_root": "data/splits/mitbih_v1"
+    },
+    "defense": {
+      "bn_running_stats": "coordinate_wise_median_of_accepted",
+      "bn_variance_floor": 1e-05,
+      "clipping_norm": 2.603,
+      "cosine_threshold": 0.1814,
+      "enabled": true,
+      "fallback": "coordinate-wise median of clipped updates if no client is accepted",
+      "mode": "observe",
+      "name": "proposed_robust_fedavg_v1__fedavg_control",
+      "norm_ratio_threshold": 2.0,
+      "reference_direction": "coordinate_wise_median",
+      "update_scope": "trainable parameters (conv/linear weights and biases, BatchNorm affine weight and bias)",
+      "weighting": "prior sample weights renormalised over accepted clients; flagged clients receive weight 0"
+    },
+    "experiment_id": "final_fedavg_control_clean_s202",
+    "model": {
+      "architecture": "centralized_cnn_v1",
+      "class": "src.models.cnn1d.ECG1DCNN",
+      "dropout": 0.3
+    },
+    "model_selection": {
+      "metric": "validation_loss",
+      "mode": "min",
+      "split": "validation"
+    },
+    "output_root": "results",
+    "participation": {
+      "fraction": 1.0
+    },
+    "partition": {
+      "min_client_segments": 1000,
+      "num_clients": 5,
+      "seed": 202,
+      "strategy": "random_group_equal_count"
+    },
+    "random_seed": 202,
+    "runtime": {
+      "cpu_threads": 8,
+      "device": "cpu",
+      "evaluation_batch_size": 512,
+      "num_workers": 0
+    },
+    "training": {
+      "batch_size": 256,
+      "client_optimizer_state": "reset_each_round",
+      "learning_rate": 0.001,
+      "local_epochs": 1,
+      "loss": "CrossEntropyLoss",
+      "optimizer": "Adam",
+      "rounds": 20,
+      "shuffle_training": true
+    }
+  },
+  "defense": {
+    "config": {
+      "bn_running_stats": "coordinate_wise_median_of_accepted",
+      "bn_variance_floor": 1e-05,
+      "clipping_norm": 2.603,
+      "cosine_threshold": 0.1814,
+      "enabled": true,
+      "fallback": "coordinate-wise median of clipped updates if no client is accepted",
+      "mode": "observe",
+      "name": "proposed_robust_fedavg_v1__fedavg_control",
+      "norm_ratio_threshold": 2.0,
+      "reference_direction": "coordinate_wise_median",
+      "update_scope": "trainable parameters (conv/linear weights and biases, BatchNorm affine weight and bias)",
+      "weighting": "prior sample weights renormalised over accepted clients; flagged clients receive weight 0"
+    },
+    "defense_seconds_total": 0.10309989999586833
+  },
+  "experiment_id": "final_fedavg_control_clean_s202",
+  "final_round_validation": {
+    "client_train_accuracy_weighted": 0.9488201160541587,
+    "client_train_loss_weighted": 0.20000685973408758,
+    "elapsed_seconds": 122.47082950000186,
+    "participants": 5,
+    "round": 20,
+    "validation_accuracy": 0.7012415142804721,
+    "validation_loss": 1.1775471479854382,
+    "validation_macro_f1": 0.08698406723929299,
+    "validation_macro_precision": 0.07269153454592615,
+    "validation_macro_recall": 0.12774569277989584,
+    "validation_weighted_f1": 0.625332227064129
+  },
+  "model_path": "results/final/runs/models/federated/final_fedavg_control_clean_s202_global.pt",
+  "num_clients": 5,
+  "rounds": 20,
+  "selected_round_by_validation_loss": 18,
+  "selected_round_validation": {
+    "client_train_accuracy_weighted": 0.9459832366215344,
+    "client_train_loss_weighted": 0.20932988934876995,
+    "elapsed_seconds": 109.90106320000268,
+    "participants": 5,
+    "round": 18,
+    "validation_accuracy": 0.7220965078588466,
+    "validation_loss": 1.1460060923699247,
+    "validation_macro_f1": 0.09068830041485211,
+    "validation_macro_precision": 0.0752605793341595,
+    "validation_macro_recall": 0.12967929190051422,
+    "validation_weighted_f1": 0.6379915766341621
+  },
+  "software": {
+    "numpy": "2.5.3",
+    "torch": "2.14.1+cpu"
+  },
+  "test_evaluated": true,
+  "test_metrics": {
+    "accuracy": 0.7057651520020567,
+    "auroc_defined_class_count": 8,
+    "class_count": 15,
+    "macro_auroc_ovr_defined_classes": 0.6850893657886381,
+    "macro_f1": 0.08993342348854819,
+    "macro_precision": 0.0767983380118346,
+    "macro_recall_all_15_labels_zero_for_no_support": 0.11599063413722721,
+    "macro_sensitivity_supported_classes": 0.21748243900730102,
+    "macro_specificity_all_classes": 0.960666338207027,
+    "micro_auroc_ovr_flattened": 0.9574474288372813,
+    "micro_f1": 0.7057651520020567,
+    "micro_precision": 0.7057651520020567,
+    "micro_recall": 0.7057651520020567,
+    "weighted_auroc_ovr_defined_classes": 0.921531173320471,
+    "weighted_f1": 0.6202274722034083,
+    "weighted_precision": 0.5599569466443953,
+    "weighted_recall": 0.7057651520020567,
+    "weighted_sensitivity": 0.7057651520020567,
+    "weighted_specificity": 0.7042299211033484
+  },
+  "trainable_parameters": 10127,
+  "training_elapsed_seconds": 122.8524193000012,
+  "validation_segments": 16351
+}

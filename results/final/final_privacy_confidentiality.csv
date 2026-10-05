@@ -1,0 +1,5 @@
+mechanism,property,evidence,formal_guarantee,value,day
+Federated learning (FedAvg),raw ECG stays on simulated clients,design (simulation),none,,10
+DP-FedAvg,"client-level (epsilon, delta)-DP, trusted server, full participation",GDP accountant (Dong-Roth-Su; Balle-Wang conversion),yes (as stated),"epsilon=7.9795, delta=1e-05, RDP bound 9.36",13
+HE-FedAvg (CKKS),honest-but-curious server sees only ciphertexts of individual updates,server context has no secret key (tested); 128-bit parameter set,computational confidentiality of individual updates only; none for the aggregate/model,"N=8192, 200-bit modulus, scale 2^40",14
+Blockchain ledger,no confidentiality; stores hashes/IDs/counts only,schema + integration tests (no floats on-chain),none,,16

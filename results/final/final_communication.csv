@@ -1,0 +1,6 @@
+setting,bytes_per_model_transfer,total_bytes_20_rounds_5_clients,ratio_vs_fedavg,measured,day
+Plaintext FedAvg,41428.0,8285600.0,1.0,analytical,10
+DP-FedAvg,41428.0,8285600.0,1.0,analytical (0 extra bytes),13
+HE-FedAvg (all ciphertext traffic),994171.2166666668,169940961.66666666,20.510398965273087,serialized ciphertext sizes,14
+Blockchain ledger (per run),,22272.0,0.0026880370763734673,ledger file size,16
+Proposed defense (v1 / Variant 5),41428.0,8285600.0,1.0,0 extra bytes (server-side),18

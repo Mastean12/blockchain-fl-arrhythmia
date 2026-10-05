@@ -1,0 +1,254 @@
+{
+  "study": "A Blockchain-Enabled Federated Learning Framework for Privacy-Preserving Arrhythmia Detection",
+  "frozen_on": "2026-10-05",
+  "dataset": "MIT-BIH Arrhythmia Database v1.0.0 (PhysioNet), 48 records",
+  "experiments": [
+    {
+      "day": 6,
+      "id": "centralized_cnn_v1",
+      "configs": [
+        "configs/training/centralized_cnn_v1.json"
+      ],
+      "seeds": [
+        42
+      ],
+      "outputs": [
+        "results/metrics",
+        "results/tables",
+        "results/figures"
+      ],
+      "doc": "docs/evaluation_baseline.md"
+    },
+    {
+      "day": 9,
+      "id": "baseline_freeze",
+      "configs": [],
+      "seeds": [],
+      "outputs": [],
+      "doc": "docs/baseline_freeze.md"
+    },
+    {
+      "day": 10,
+      "id": "fedavg_v1",
+      "configs": [
+        "configs/federated/fedavg_v1.json"
+      ],
+      "seeds": [
+        42
+      ],
+      "outputs": [
+        "results/metrics/federated",
+        "results/tables/federated",
+        "results/figures/federated"
+      ],
+      "doc": "docs/federated_learning_baseline.md"
+    },
+    {
+      "day": 11,
+      "id": "fedavg_v1_robustness",
+      "configs": [
+        "configs/federated/fedavg_v1_robustness.json"
+      ],
+      "seeds": [
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/robustness"
+      ],
+      "doc": "docs/fedavg_robustness.md"
+    },
+    {
+      "day": 12,
+      "id": "fedbn_diagnostic_v1",
+      "configs": [
+        "configs/federated/fedbn_diagnostic_v1.json"
+      ],
+      "seeds": [
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/diagnostics/fedbn"
+      ],
+      "doc": "docs/fedbn_diagnostic.md"
+    },
+    {
+      "day": 13,
+      "id": "dp_fedavg_v1",
+      "configs": [
+        "configs/privacy/dp_fedavg_v1.json"
+      ],
+      "seeds": [
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/privacy"
+      ],
+      "doc": "docs/differential_privacy.md"
+    },
+    {
+      "day": 14,
+      "id": "he_fedavg_v1",
+      "configs": [
+        "configs/he/he_fedavg_v1.json"
+      ],
+      "seeds": [
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/he"
+      ],
+      "doc": "docs/homomorphic_encryption.md"
+    },
+    {
+      "day": 15,
+      "id": "ledger_v1",
+      "configs": [
+        "configs/blockchain/ledger_v1.json"
+      ],
+      "seeds": [
+        42
+      ],
+      "outputs": [
+        "results/blockchain"
+      ],
+      "doc": "docs/blockchain.md"
+    },
+    {
+      "day": 16,
+      "id": "fedavg_blockchain_v1",
+      "configs": [
+        "configs/blockchain/fedavg_blockchain_v1.json"
+      ],
+      "seeds": [
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/blockchain_integration"
+      ],
+      "doc": "docs/blockchain_fl_integration.md"
+    },
+    {
+      "day": 17,
+      "id": "malicious_clients_v1",
+      "configs": [
+        "configs/security/attacks_v1.json"
+      ],
+      "seeds": [
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/security"
+      ],
+      "doc": "docs/malicious_clients.md"
+    },
+    {
+      "day": 18,
+      "id": "proposed_robust_fedavg_v1",
+      "configs": [
+        "configs/proposed/calibration_v1.json",
+        "configs/proposed/robust_defense_v1.json"
+      ],
+      "seeds": [
+        7,
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/proposed"
+      ],
+      "doc": "docs/proposed_method.md"
+    },
+    {
+      "day": 19,
+      "id": "proposed_defense_ablation_v1",
+      "configs": [
+        "configs/ablation/ablation_v1.json"
+      ],
+      "seeds": [
+        42,
+        123,
+        2024
+      ],
+      "outputs": [
+        "results/ablation"
+      ],
+      "doc": "docs/ablation.md"
+    },
+    {
+      "day": 20,
+      "id": "final_independent_confirmation_v1",
+      "configs": [
+        "configs/final/final_validation_v1.json"
+      ],
+      "seeds": [
+        101,
+        202,
+        303
+      ],
+      "outputs": [
+        "results/final"
+      ],
+      "doc": "docs/final_results.md"
+    }
+  ],
+  "key_artifact_sha256": {
+    "results/models/centralized_cnn_v1.pt": "95dce4cc3334a616aa46229fcc350606a60d8bbb5e56262866cc95fb4a6e499f",
+    "results/metrics/baseline_metrics.json": "f5367cee6971870f5e592c0eae943eedba5ad55bbe9a4a79cede6ba55630fb34",
+    "results/metrics/baseline_test_predictions.npz": "5ed17e1e57c6eebe84de33154b37cfcab33f0c4df6ee3ca0c4455b7af85a8c45",
+    "results/models/federated/fedavg_v1_global.pt": "ff030c0755e4f5cdfe1017a7771b0e00794b7e3616238c3d8b80e70630d13129",
+    "results/metrics/federated/fedavg_v1_test_predictions.npz": "5031c9465c219bd1dbfbd44d435a7fb3dc67bfd808035172cd975ac68808576e",
+    "results/metrics/federated/fedavg_v1_test_metrics.json": "045939aacce5a6927740d1eed9269006c8c5b72378ee0d95a6fec61cc74c5a4e",
+    "data/splits/mitbih_v1/split_metadata.json": "229b0db300778b0e5203b7d13537840410d52ce86752279f4e419195596831c2",
+    "configs/preprocessing/mitbih_v1.json": "4b1b9d4fec033641277e3249ef8fe8dad74207349270f6e9457ddaffc0a4444f",
+    "configs/preprocessing/mitbih_split_v1.json": "dee4584c04a1c8106b2a83d5f3e56f549c484afdc8561b2b862e8a616d277eb3",
+    "configs/training/centralized_cnn_v1.json": "af5dcc1b1d6d4108c3c72d5a57addd93e3a75c0fd4335a162d3e03d7ba7c59bd",
+    "configs/federated/fedavg_v1.json": "13a369085aaf1de47ea15550668e3a3b221726afd0e84e05354c218ff11c8791",
+    "configs/proposed/robust_defense_v1.json": "ff0a87cd468f09ef3377d396e6d57ce5d4eb94e87a747c8eba04008cfefef78e",
+    "configs/final/final_validation_v1.json": "c5dfe21007f9b7e836809aa8f682f60a71b9cefbbc9339325077f712442ba552"
+  },
+  "git_history_at_freeze": [
+    "3057524 research: ablate the proposed robust aggregation defense",
+    "5c30bcc research: add proposed robust aggregation defense",
+    "f858aa7 research: evaluate malicious-client attacks against FedAvg",
+    "e1b941b research: integrate blockchain ledger with FedAvg rounds",
+    "4d9e4e0 research: add isolated hash-chained ledger prototype",
+    "2f8e422 research: add CKKS homomorphic encryption for FedAvg aggregation",
+    "bebae0a research: add client-level DP-FedAvg experiment",
+    "f1a56ee research: diagnose FedAvg with FedBN-style local BatchNorm",
+    "29cd6a4 research: validate FedAvg robustness across seeds",
+    "ec7375c research: add FedAvg federated learning baseline",
+    "964a930 research: freeze centralized baseline",
+    "3e2b2f2 research: add Day 8 label and leakage audit",
+    "d63f96c research: document baseline checkpoint",
+    "886ec13 Add centralized CNN test evaluation",
+    "31a517d Add centralized ECG 1D CNN baseline",
+    "0b6eb79 Add reproducible MIT-BIH group splits",
+    "bbb63f3 Add MIT-BIH ECG preprocessing pipeline",
+    "38399f5 Set up research environment and explore MIT-BIH",
+    "617e625 Add initial research project structure",
+    "c6fc14d Initial commit"
+  ],
+  "regenerable_untracked": [
+    "data/raw",
+    "data/processed",
+    "data/splits/*/*/*.npz",
+    "*/models/ (per-run checkpoints)",
+    "*/metrics/federated/*.npz (per-run predictions/trajectories)",
+    "results/blockchain_integration/offchain",
+    "results/ablation/figures/federated/*.png",
+    "results/final/runs/figures/federated/*.png"
+  ]
+}

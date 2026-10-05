@@ -1,0 +1,9 @@
+component,seconds,day
+HE: encryption per client per round,0.0173367043333625,14
+HE: server aggregation per round,0.019734169999931734,14
+HE: total over 20 rounds,2.2021056000012296,14
+Blockchain: hashing + blocks per run (real FedAvg),0.02870373333704637,16
+Blockchain: create per block (synthetic),6.662488000001758e-05,15
+Defense v1: server time per round,0.003680321666653627,18
+Variant 5: server time per round (fresh seeds),0.0034805358332808114,20
+"FedAvg training run (20 rounds, CPU)",117.20074945833342,20

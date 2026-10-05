@@ -53,3 +53,9 @@ results/ablation/metrics/federated/*.npz
 # Per-run ablation figures are regenerable from the tracked per-run CSV/JSON outputs; the summary
 # figure results/ablation/figures/ablation_overview.png stays tracked.
 results/ablation/figures/federated/*.png
+
+# Day 20 final-confirmation runs: per-run checkpoints, prediction arrays, trajectories and per-run figures are
+# regenerable (src.federated.final_validation.run_all with configs/final/final_validation_v1.json).
+results/final/runs/models/
+results/final/runs/metrics/federated/*.npz
+results/final/runs/figures/federated/*.png

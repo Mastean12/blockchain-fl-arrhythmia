@@ -726,3 +726,48 @@ Attribute the Day 18 results to individual components of the **frozen** defense:
 - Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, taxonomy, and DP/HE compatibility of the defense.
 
 No new attacks, tuning, defense, or DP/HE/blockchain integration were added in Day 19. Nothing was committed or pushed.
+
+
+# Day 20 — Final validation, consolidation and research freeze
+
+**Date:** 2026-10-05
+
+## Independent confirmation (fresh seeds 101, 202, 303; declared in `configs/final/final_validation_v1.json`)
+
+The Day 19 Variant 5 defense (clipping + cosine + norm filters, no BatchNorm median or floor) was run with the frozen Day 18 thresholds against matching FedAvg controls. The controls were the defense in observe mode, which is plain FedAvg and reproduces the official Day 10 model bit-identically. Clean and the three Day 17 attacks gave 24 runs. Nothing was tuned.
+
+| Condition | FedAvg control: macro-F1 / accuracy / breakdown rounds | Variant 5: macro-F1 / accuracy / breakdown rounds | Variant 5 detection / false positives |
+|---|---|---|---|
+| Clean | 0.095 / 0.706 / 0 | 0.090 / 0.709 / 0 | — / 0% |
+| Sign flip | 0.085 / 0.650 / **16, 16, 16** | 0.085 / 0.704 / **0** | **100%** / 0% |
+| Scaled ×10 | **0.035 / 0.437** / **10, 20, 10** | **0.085 / 0.704** / **0** | **100%** / 0% |
+| Noise | 0.089 / 0.707 / 0 | 0.098 / 0.702 / 0 | 5–10% / 0% |
+
+- **Confirmed:** the Day 19 attribution holds on fresh seeds. The clean cost is −0.004 macro-F1 (Day 18 v1: −0.015). The sign-flip control's test metrics were again masked by pre-breakdown round selection.
+- **Overhead:** 3.4–3.7 ms per round on the server (about 0.06% of training), and 0 bytes.
+
+## Consolidation and freeze
+
+- **Outputs:** `results/final/` contains per-dimension CSVs (utility, privacy/confidentiality, integrity/auditability, robustness, communication, computation), `final_summary.json` (with research-question status), and `experiment_manifest.json` (all experiments, configurations, seeds, SHA-256 of key frozen artifacts, git history).
+- **Figures:** a utility overview (min–max whiskers), the fresh-seed confirmation, and a cost overview.
+- **Documents:** `docs/final_results.md`, `final_methodology.md`, `final_limitations.md` (38 consolidated limitations), and `reproducibility.md`.
+- **Code and tests:** `src/federated/final_validation.py`, `src/final_report.py`, and `tests/test_final.py` (5 tests, including observe control ≡ plain FedAvg through the real pipeline).
+- **Ignored as regenerable:** per-run Day 20 checkpoints, `.npz` files, and figures.
+
+## Research-question status
+
+RQ1–RQ5 are all **partially answered**: supported within the simulated, single-dataset scope, with specific gaps listed in `final_results.md` §3.
+
+## Unresolved (prevents calling the project research-complete)
+
+1. The literature review is empty (`literature_matrix.md` is a template).
+2. The core task is weak: macro-F1 0.14, 8 of 15 classes with test support, provisional taxonomy, and an unexplained N/V collapse.
+3. There is no local-only baseline.
+4. The privacy evaluation is single-point, with no ε sweep, record-level DP, or DP+HE.
+5. The blockchain is a single-node prototype.
+6. The components were never integrated into the full framework.
+7. Few seeds, and no significance testing.
+
+The freeze is an experimentally complete prototype evaluation within its stated scope, not a research-complete study.
+
+No result from Days 6–19 was changed. Nothing was pushed.

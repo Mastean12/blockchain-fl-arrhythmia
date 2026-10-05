@@ -1,0 +1,24 @@
+{
+  "study_id": "final_independent_confirmation_v1",
+  "description": "Day 20 independent confirmation of the Day 19 Variant 5 defense (L2 clipping + cosine filter + norm filter, FedAvg-style BatchNorm statistics over accepted clients, no BatchNorm median or floor) with the frozen Day 18 thresholds, on fresh seeds never used before. Declared before any run; nothing is tuned from these results.",
+  "frozen_defense_config": "configs/proposed/robust_defense_v1.json",
+  "attack_config": "configs/security/attacks_v1.json",
+  "seeds": [101, 202, 303],
+  "seeds_excluded": {"evaluation_days_10_19": [42, 123, 2024], "calibration_day_18": [7]},
+  "conditions": ["clean", "sign_flip", "scaled", "random_noise"],
+  "arms": {
+    "fedavg_control": {
+      "label": "FedAvg control",
+      "defense_mode": "observe",
+      "note": "Observe mode returns exactly plain sample-weighted FedAvg (tested bit-identical); it additionally logs would-be screening statistics and the global trajectory for deviation analysis."
+    },
+    "variant5": {
+      "label": "Variant 5 defense",
+      "defense_mode": "defend",
+      "components": {"clipping": true, "cosine_filter": true, "norm_filter": true, "robust_bn_stats": false}
+    }
+  },
+  "unchanged": "MIT-BIH v1 preprocessing and split, natural 5-client random_group_equal_count partition (partition seed = run seed), 20 rounds, 1 local epoch, Adam lr 0.001, batch 256, full participation, minimum-validation-loss round selection, one test evaluation per run, Day 17 attack definitions and attacker-selection rule.",
+  "run_id_template": "final_{arm}_{condition}_s{seed}",
+  "output_root": "results/final/runs"
+}
