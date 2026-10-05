@@ -1,0 +1,23 @@
+{
+  "robustness_id": "fedbn_diagnostic_v1",
+  "study_title": "FedBN-style diagnostic (local BatchNorm)",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [42, 123, 2024],
+  "seed_controls": ["random_seed", "partition.seed"],
+  "primary_partition": "random_group_equal_count",
+  "diagnostic_partitions": [],
+  "run_id_template": "fedbn_v1_{partition_label}_s{seed}",
+  "partition_labels": {
+    "random_group_equal_count": "natural"
+  },
+  "extra_overrides": {
+    "aggregation": {"batchnorm": "local"}
+  },
+  "comparator": {
+    "description": "Day 11 standard FedAvg, natural partition, same seeds (paired: same partition, initialization and training order)",
+    "runs_table": "results/robustness/tables/robustness_runs.csv",
+    "tables_dir": "results/robustness/tables/federated",
+    "run_id_template": "fedavg_v1_natural_s{seed}"
+  },
+  "output_root": "results/diagnostics/fedbn"
+}

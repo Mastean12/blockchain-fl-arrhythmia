@@ -325,3 +325,49 @@ Test whether the Day 10 FedAvg degradation and collapse to `N`/`V` are reproduci
 In `docs/fedavg_robustness.md`, three over-broad statements were corrected against the saved tables: the gap-versus-spread comparison, the `/`/`L` detection counts, and the description of the convergence shapes. The robustness runs had overwritten each other's centralized-vs-FedAvg comparison tables because they shared one unprefixed file name. These were rebuilt per run by post-processing the saved test outputs, and the misleading leftover pair was removed; no experiment was re-run. Per-run robustness checkpoints and `.npz` prediction files were added to `.gitignore` as regenerable. The configuration, code, tests, summary tables, and figures stay tracked.
 
 No privacy, encryption, blockchain, attack, or proposed-algorithm code was implemented. Nothing was committed or pushed.
+
+
+# Day 12 — BatchNorm diagnostic (FedBN-style)
+
+**Date:** 2026-10-05
+
+## Purpose
+
+This is a one-factor diagnostic of the Day 10/11 FedAvg degradation: does keeping BatchNorm local to each client, instead of averaging it, change the minority-class collapse? Full report: `docs/fedbn_diagnostic.md`. Outputs: `results/diagnostics/fedbn/`.
+
+## Design
+
+- **Intervention:** `aggregation.batchnorm = "local"`. Every client keeps its own BatchNorm weight, bias, running statistics, and counter across rounds. Conv1d and Linear parameters still go through sample-weighted FedAvg.
+- **Fixed:** the natural 5-client partition, seeds 42, 123, and 2024, and every Day 11 setting (20 rounds, 1 local epoch, Adam lr 0.001, batch size 256, full participation, minimum-validation-loss selection, one test evaluation, frozen metrics).
+- **Pairing:** each run is paired by seed with the Day 11 natural FedAvg run, so partition, initialisation, and training order are identical.
+- **Evaluation model:** the shared weights plus the sample-weighted average of client BatchNorm states. It is used only for evaluation and never broadcast. Under standard FedAvg the same construction is exactly the broadcast model.
+- **Extra diagnostic:** each client's personalised model (own BatchNorm) is scored on validation only.
+
+## Results
+
+- **Selected rounds:** 3, 2, 12 (FedAvg: 3, 2, 17).
+- **Test macro-F1:** 0.0844 / 0.0974 / 0.0706 against FedAvg 0.0848 / 0.0986 / 0.0717. Mean paired Δ −0.0009, range −0.0012 to −0.0004.
+- **Test accuracy:** 0.7031 / 0.6928 / 0.5579 (Δ −0.0055). **Weighted-F1:** 0.6542 / 0.5822 / 0.5519 (Δ −0.0060). **Macro recall:** Δ −0.0007.
+- **Macro AUROC:** 0.6694 / 0.6596 / 0.6451 (Δ +0.0107; higher in 2 of 3 seeds).
+- **Predicted classes:** 2 / 3 / 3. Between 99.77% and 100% of test predictions are `N` or `V`, and `/` and `L` recall is 0 in every run.
+- **Personalised models:** client models reach validation macro-F1 of 0.037–0.092, never near the centralized 0.1737.
+- **Size of the effect:** all paired differences are an order of magnitude smaller than seed-to-seed variability (0.0269) and the gap to centralized (at least 0.041).
+- **Mechanism check:** with momentum 0.1 and 47–74 batches per local epoch, at most about 0.7% of the starting running statistics survive one epoch. Running statistics are therefore re-estimated locally in both arms. The effective manipulated factor is mainly BatchNorm affine locality.
+- **Integrity:** the default code path reproduced the official Day 10 model bit-identically. All 257 pre-existing files under `results/`, `data/splits/`, `configs/`, and `tests/` are byte-identical.
+
+## Conclusion
+
+The BatchNorm-only intervention does **not** materially change the minority-class collapse in this setup. This argues against BatchNorm averaging being the main driver for these seeds and this configuration. It does not establish what the cause is, and it does not rule out BatchNorm effects in other regimes, such as fewer local steps or frozen statistics.
+
+## Unresolved questions
+
+- Remaining one-factor candidates:
+  - optimizer state (SGD, or keeping Adam state across rounds);
+  - local epochs and client drift;
+  - training budget matched to the centralized run;
+  - the selection criterion (validation loss against macro-F1).
+- Label skew of `/` and `L`, which are confined to 2 training records each. Only a diagnostic that splits records within the training set could vary this.
+- How variable is the centralized baseline across seeds?
+- Day 8 taxonomy questions remain open.
+
+No privacy, encryption, blockchain, attack, or proposed-algorithm code was implemented. Nothing was committed or pushed.

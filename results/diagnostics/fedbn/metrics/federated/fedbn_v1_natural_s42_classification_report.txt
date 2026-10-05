@@ -1,0 +1,24 @@
+              precision    recall  f1-score   support
+
+           /     0.0000    0.0000    0.0000      2078
+           A     0.0000    0.0000    0.0000        50
+           E     0.0000    0.0000    0.0000         0
+           F     0.0000    0.0000    0.0000        13
+           J     0.0000    0.0000    0.0000         0
+           L     0.0000    0.0000    0.0000      2001
+           N     0.9443    0.9806    0.9621     10197
+           Q     0.0000    0.0000    0.0000         4
+           R     0.0000    0.0000    0.0000         0
+           S     0.0000    0.0000    0.0000         0
+           V     0.1893    0.7777    0.3045      1210
+           a     0.0000    0.0000    0.0000         6
+           e     0.0000    0.0000    0.0000         0
+           f     0.0000    0.0000    0.0000         0
+           j     0.0000    0.0000    0.0000         0
+
+    accuracy                         0.7031     15559
+   macro avg     0.0756    0.1172    0.0844     15559
+weighted avg     0.6336    0.7031    0.6542     15559
+
+Sensitivity for classes with zero test support is undefined (shown as blank in the detailed CSV).
+Specificity uses one-vs-rest TN/(TN+FP). AUROC is undefined for classes with no positives.

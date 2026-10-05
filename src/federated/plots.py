@@ -131,7 +131,7 @@ def _seed_style(seeds):
     return {seed: SEED_STYLES[i % len(SEED_STYLES)] for i, seed in enumerate(sorted(seeds))}
 
 
-def plot_robustness_convergence(history, reference, path):
+def plot_robustness_convergence(history, reference, path, title="FedAvg robustness"):
     """Rows: partitions; columns: validation loss, macro-F1, accuracy; one line per seed."""
     partitions = list(dict.fromkeys(history["partition"]))
     styles = _seed_style(history["seed"].unique())
@@ -157,13 +157,13 @@ def plot_robustness_convergence(history, reference, path):
             ax.set_xlabel("Communication round", color=MUTED)
             if r == 0 and c == 0:
                 ax.legend(fontsize=8, frameon=False)
-    fig.suptitle("FedAvg robustness: validation metrics by round (open marker = round selected by minimum "
+    fig.suptitle(f"{title}: validation metrics by round (open marker = round selected by minimum "
                  "validation loss)", fontsize=12, color=INK)
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
 
-def plot_robustness_test_metrics(runs, reference, path):
+def plot_robustness_test_metrics(runs, reference, path, title="FedAvg robustness"):
     """One dot per run for test accuracy, macro-F1 and weighted-F1, with the centralized value dashed."""
     partitions = list(dict.fromkeys(runs["partition"]))
     styles = _seed_style(runs["seed"].unique())
@@ -185,6 +185,30 @@ def plot_robustness_test_metrics(runs, reference, path):
         ax.set_xlim(-0.6, len(partitions) - 0.4)
         ax.set_title(title, loc="left", fontsize=11, color=INK)
     axes[0].legend(fontsize=8, frameon=False)
-    fig.suptitle("Held-out test metrics per FedAvg robustness run (each evaluated once)", fontsize=12, color=INK)
+    fig.suptitle(f"{title}: held-out test metrics per run (each evaluated once)", fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def plot_paired_slopes(paired, reference, path):
+    """Seed-paired slope chart: standard FedAvg vs the diagnostic arm, with the centralized value dashed."""
+    panels = [("test_accuracy", "Test accuracy"), ("test_macro_f1", "Test macro-F1 (15 classes)"),
+              ("test_weighted_f1", "Test weighted-F1"), ("test_macro_recall", "Test macro recall (15 classes)")]
+    styles = _seed_style(paired["seed"].unique())
+    fig, axes = plt.subplots(1, len(panels), figsize=(16, 4.6), layout="constrained")
+    for ax, (key, title) in zip(axes, panels):
+        _style(ax)
+        rows = paired[paired["metric"] == key]
+        for _, row in rows.iterrows():
+            color, marker = styles[row["seed"]]
+            ax.plot([0, 1], [row["fedavg"], row["fedbn"]], color=color, marker=marker, markersize=8, linewidth=2,
+                    label=f"seed {row['seed']}")
+        ax.axhline(reference[key], color=MUTED, linewidth=1.5, linestyle="--", label="centralized_cnn_v1")
+        ax.set_xticks([0, 1], ["FedAvg\n(Day 11)", "FedBN-style\n(local BatchNorm)"])
+        ax.set_xlim(-0.35, 1.35)
+        ax.set_title(title, loc="left", fontsize=11, color=INK)
+    axes[0].legend(fontsize=8, frameon=False)
+    fig.suptitle("Seed-paired comparison: same partition, initialization and training order; only BatchNorm "
+                 "handling differs", fontsize=12, color=INK)
     fig.savefig(path, dpi=200)
     plt.close(fig)

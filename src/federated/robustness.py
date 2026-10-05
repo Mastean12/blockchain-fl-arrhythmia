@@ -43,8 +43,14 @@ def planned_runs(config):
     return runs
 
 
-def run_overrides(run_id, strategy, seed):
-    return {"experiment_id": run_id, "random_seed": seed, "partition": {"seed": seed, "strategy": strategy}}
+def run_overrides(run_id, strategy, seed, extra=None):
+    """Per-run overrides; `extra` holds fixed study-level overrides (e.g. the BatchNorm mode)."""
+    overrides = {"experiment_id": run_id, "random_seed": seed, "partition": {"seed": seed, "strategy": strategy}}
+    for section, values in (extra or {}).items():
+        if section in overrides:
+            raise ValueError(f"extra_overrides may not change per-run field '{section}'")
+        overrides[section] = values
+    return overrides
 
 
 def run_all(config_path="configs/federated/fedavg_v1_robustness.json", log=print):
@@ -60,7 +66,8 @@ def run_all(config_path="configs/federated/fedavg_v1_robustness.json", log=print
             continue
         log(f"{run_id}: training")
         summaries[run_id] = run_experiment(config["base_config"], evaluate_test=True, output_root=root,
-                                           overrides=run_overrides(run_id, strategy, seed), log=lambda *a: None,
+                                           overrides=run_overrides(run_id, strategy, seed, config.get("extra_overrides")),
+                                           log=lambda *a: None,
                                            comparison_prefix=f"{run_id}_")
     return summaries
 
@@ -161,6 +168,7 @@ def write_reports(config_path="configs/federated/fedavg_v1_robustness.json",
                      "validation_loss": epoch["validation_loss"]}
     reference_test = {"test_accuracy": central["accuracy"], "test_macro_f1": central["macro_f1"],
                       "test_weighted_f1": central["weighted_f1"]}
-    plots.plot_robustness_convergence(results["history"], reference_val, figures / "robustness_convergence.png")
-    plots.plot_robustness_test_metrics(results["runs"], reference_test, figures / "robustness_test_metrics.png")
+    title = config.get("study_title", "FedAvg robustness")
+    plots.plot_robustness_convergence(results["history"], reference_val, figures / "robustness_convergence.png", title)
+    plots.plot_robustness_test_metrics(results["runs"], reference_test, figures / "robustness_test_metrics.png", title)
     return results

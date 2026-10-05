@@ -113,3 +113,24 @@ def client_update(model, global_state, dataset, *, local_epochs, batch_size, lea
             correct += int((logits.argmax(dim=1) == targets).sum().item())
     return {"state": get_model_state(model), "num_samples": len(dataset),
             "train_loss": loss_sum / seen, "train_accuracy": correct / seen}
+
+
+def batchnorm_state_keys(model):
+    """State-dict keys owned by BatchNorm layers (affine weight/bias, running stats, counter)."""
+    bn_prefixes = [name for name, module in model.named_modules() if isinstance(module, nn.modules.batchnorm._BatchNorm)]
+    return [key for key in model.state_dict() if any(key.startswith(prefix + ".") for prefix in bn_prefixes)]
+
+
+def client_start_state(global_state, local_state=None):
+    """State a client starts a round from.
+
+    Standard FedAvg (`local_state=None`): the broadcast global state. FedBN-style:
+    the global non-BatchNorm entries with the client's own persisted BatchNorm
+    entries substituted. Key order is kept identical to the global state.
+    """
+    if not local_state:
+        return global_state
+    unknown = set(local_state) - set(global_state)
+    if unknown:
+        raise ValueError(f"Local state has keys not in the global model: {sorted(unknown)}")
+    return OrderedDict((key, local_state.get(key, value)) for key, value in global_state.items())

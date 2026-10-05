@@ -12,3 +12,8 @@ data/splits/mitbih_v1/*/*.npz
 # (src.federated.robustness.run_all); summary tables, figures and per-run CSV/JSON stay tracked.
 results/robustness/models/
 results/robustness/metrics/federated/*.npz
+
+# Day 12 diagnostics: per-run checkpoints and prediction arrays are regenerable
+# (src.federated.robustness.run_all with the diagnostic config).
+results/diagnostics/*/models/
+results/diagnostics/*/metrics/federated/*.npz

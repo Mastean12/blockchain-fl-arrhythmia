@@ -24,7 +24,8 @@ from .config import load_federated_config
 from .data import ClientECGDataset, load_class_to_index
 from .evaluation import (communication_cost, compare_with_centralized, evaluate_test_once,
                          validation_metrics)
-from .fedavg import client_seed, client_update, fedavg_aggregate, get_model_state, select_clients, set_model_state
+from .fedavg import (batchnorm_state_keys, client_seed, client_start_state, client_update, fedavg_aggregate,
+                     get_model_state, select_clients, set_model_state)
 from .partition import build_client_partition, client_distribution_tables
 from . import plots
 
@@ -117,6 +118,14 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     worker = copy.deepcopy(global_model)
     global_state = get_model_state(global_model)
     trainable = count_trainable_parameters(global_model)
+    # aggregation.batchnorm: "aggregate" = standard FedAvg (default); "local" = FedBN-style, where each
+    # client keeps its own BatchNorm entries across rounds. In both modes the evaluated global model is
+    # the sample-weighted average of all client states; in "local" mode its BatchNorm part is used only
+    # for evaluation and is never broadcast back to clients.
+    bn_mode = config["aggregation"].get("batchnorm", "aggregate")
+    bn_keys = batchnorm_state_keys(global_model) if bn_mode == "local" else []
+    local_bn = {}
+    client_validation = []
 
     history = [{"round": 0, "participants": 0, "client_train_loss_weighted": None,
                 "client_train_accuracy_weighted": None, "elapsed_seconds": 0.0,
@@ -131,13 +140,16 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         participants_per_round.append(len(selected))
         updates = []
         for k in selected:
-            update = client_update(worker, global_state, client_data[k], local_epochs=int(train_cfg["local_epochs"]),
+            start_state = client_start_state(global_state, local_bn.get(k)) if bn_mode == "local" else global_state
+            update = client_update(worker, start_state, client_data[k], local_epochs=int(train_cfg["local_epochs"]),
                                    batch_size=int(train_cfg["batch_size"]),
                                    learning_rate=float(train_cfg["learning_rate"]),
                                    optimizer_name=train_cfg["optimizer"], seed=client_seed(seed, round_index, k),
                                    device=device, num_workers=int(runtime["num_workers"]),
                                    shuffle=bool(train_cfg["shuffle_training"]))
             updates.append(update)
+            if bn_mode == "local":
+                local_bn[k] = {key: update["state"][key] for key in bn_keys}
             client_history.append({"round": round_index, "client_id": partition["clients"][k]["client_id"],
                                    "num_samples": update["num_samples"], "train_loss": update["train_loss"],
                                    "train_accuracy": update["train_accuracy"]})
@@ -152,14 +164,28 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
                **validation_metrics(global_model, validation, len(class_names), eval_bs, device)}
         history.append(row)
         log(json.dumps({k: (round(v, 4) if isinstance(v, float) else v) for k, v in row.items()}))
+        if bn_mode == "local":
+            # Validation-only diagnostic: each client's personalised model (shared weights + own BatchNorm).
+            for k in sorted(local_bn):
+                set_model_state(worker, client_start_state(global_state, local_bn[k]))
+                client_validation.append({"round": round_index, "client_id": partition["clients"][k]["client_id"],
+                                          **validation_metrics(worker, validation, len(class_names), eval_bs, device)})
         if row["validation_loss"] < best["loss"]:
-            best = {"round": round_index, "loss": row["validation_loss"], "state": global_state}
+            best = {"round": round_index, "loss": row["validation_loss"], "state": global_state,
+                    "local_bn": {k: dict(v) for k, v in local_bn.items()}}
     elapsed = time.perf_counter() - started
 
     set_model_state(global_model, best["state"])
-    torch.save({"model_state_dict": best["state"], "architecture": model_architecture(), "input_shape": [2, 216],
+    artifact = {"model_state_dict": best["state"], "architecture": model_architecture(), "input_shape": [2, 216],
                 "class_to_index": class_to_index, "selected_round_by_validation_loss": best["round"],
-                "federated_config": config, "partition": partition}, model_path)
+                "federated_config": config, "partition": partition}
+    if bn_mode == "local":
+        artifact["batchnorm_mode"] = bn_mode
+        artifact["client_batchnorm_states"] = {partition["clients"][k]["client_id"]: v
+                                               for k, v in best.get("local_bn", {}).items()}
+    torch.save(artifact, model_path)
+    if client_validation:
+        _write_csv(metrics_dir / f"{exp}_client_validation_history.csv", client_validation)
     _write_csv(metrics_dir / f"{exp}_round_history.csv", history)
     _write_csv(metrics_dir / f"{exp}_client_round_history.csv", client_history)
     comm = communication_cost(best["state"], participants_per_round, trainable)
@@ -183,11 +209,15 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         "model_path": str(model_path).replace("\\", "/"), "test_evaluated": False,
         "centralized_validation_reference_epoch1": reference,
     }
+    if bn_mode == "local":
+        run_summary["batchnorm_mode"] = bn_mode
+        run_summary["batchnorm_state_keys"] = bn_keys
     if evaluate_test:
         result, test_summary = evaluate_test_once(global_model, split_root / "test", class_names, root, exp,
                                                   device, eval_bs, overwrite)
         plots.plot_confusion_matrix(result["confusion_matrix"], class_names,
-                                    f"FedAvg global model (round {best['round']}) — held-out test confusion matrix",
+                                    ("FedBN-style evaluation model" if bn_mode == "local" else "FedAvg global model")
+                                    + f" (round {best['round']}) — held-out test confusion matrix",
                                     figures_dir / f"{exp}_confusion_matrix.png")
         aggregate_rows, per_class_rows = compare_with_centralized(result["aggregate"], result["per_class"], label=exp)
         _write_csv(tables_dir / f"{comparison_prefix}centralized_vs_fedavg_aggregate.csv", aggregate_rows)

@@ -31,6 +31,8 @@ def load_federated_config(path):
         raise ValueError("Only FedAvg aggregation is implemented")
     if config["aggregation"]["weighting"] != "client_training_samples":
         raise ValueError("FedAvg weighting must be 'client_training_samples'")
+    if config["aggregation"].get("batchnorm", "aggregate") not in {"aggregate", "local"}:
+        raise ValueError("aggregation.batchnorm must be 'aggregate' (FedAvg) or 'local' (FedBN-style)")
     if config["model_selection"]["split"] != "validation":
         raise ValueError("Model selection may only use the validation split")
     return config
