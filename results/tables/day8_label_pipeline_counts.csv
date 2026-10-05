@@ -1,0 +1,24 @@
+source_symbol,source_description,raw_count,annotation_type,preprocessing_label,processed_count,boundary_dropped,model_class_name,model_class_index,handling
+!,Ventricular flutter wave,472,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class
+"""",Comment annotation,437,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class
++,Rhythm change marker; rhythm label is carried in the auxiliary note,1291,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class
+/,Paced beat,7028,beat,/,7027,1,/,0,Identity mapping; one model class retained
+A,Atrial premature beat,2546,beat,A,2546,0,A,1,Identity mapping; one model class retained
+E,Ventricular escape beat,106,beat,E,106,0,E,2,Identity mapping; one model class retained
+F,Fusion of ventricular and normal beat,803,beat,F,802,1,F,3,Identity mapping; one model class retained
+J,Nodal (junctional) premature beat,83,beat,J,83,0,J,4,Identity mapping; one model class retained
+L,Left bundle branch block beat,8075,beat,L,8072,3,L,5,Identity mapping; one model class retained
+N,Normal beat,75052,beat,N,75028,24,N,6,Identity mapping; one model class retained
+Q,Unclassifiable beat,33,beat,Q,33,0,Q,7,Identity mapping; one model class retained
+R,Right bundle branch block beat,7259,beat,R,7255,4,R,8,Identity mapping; one model class retained
+S,Supraventricular premature or ectopic beat (atrial or nodal),2,beat,S,2,0,S,9,Identity mapping; one model class retained
+V,Premature ventricular contraction,7130,beat,V,7129,1,V,10,Identity mapping; one model class retained
+[,Start of ventricular flutter/fibrillation,6,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class
+],End of ventricular flutter/fibrillation,6,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class
+a,Aberrated atrial premature beat,150,beat,a,150,0,a,11,Identity mapping; one model class retained
+e,Atrial escape beat,16,beat,e,16,0,e,12,Identity mapping; one model class retained
+f,Fusion of paced and normal beat,982,beat,f,982,0,f,13,Identity mapping; one model class retained
+j,Nodal (junctional) escape beat,229,beat,j,229,0,j,14,Identity mapping; one model class retained
+x,Non-conducted P-wave (blocked atrial premature beat),193,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class
+|,Isolated QRS-like artifact,132,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class
+~,Signal-quality change marker,616,non-beat/event,,0,0,,,Excluded from beat windows as event/marker; no model class

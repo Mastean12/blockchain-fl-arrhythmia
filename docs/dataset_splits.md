@@ -2,9 +2,15 @@
 
 ## Source and identifiers
 
-The source is the Day 3 processed dataset, 48 records and 109,460 beat windows. The split unit is `patient_groups` from the processed NPZ shards. Day 3 assigned `mitdb_group_201_202` to records 201 and 202 because the PhysioNet record notes state that record 202 was taken from the same analog tape as record 201. The remaining keys (`record_100`, etc.) are record-derived pseudonyms; they do **not** establish the underlying patient identity or prove that those records belong to distinct people. PhysioNet reports 48 records from 47 subjects, but a complete record-to-subject mapping is not present in this dataset’s processed metadata. [PhysioNet MIT-BIH record notes](https://physionet.org/physiobank/database/html/mitdbdir/records.htm)
+The source is the Day 3 processed dataset, 48 records and 109,460 beat windows. The split unit is `patient_groups` from the processed NPZ shards. Day 3 assigned `mitdb_group_201_202` to records 201 and 202 because the PhysioNet record notes state that record 202 was taken from the same analog tape as record 201; the PhysioNet database introduction also states that both records came from the same subject. The remaining keys (`record_100`, etc.) are record-derived pseudonyms, not source patient identifiers. [PhysioNet MIT-BIH record notes](https://physionet.org/physiobank/database/html/mitdbdir/records.htm)
 
-The split therefore provides record separation and keeps the one documented shared group together. It does not support an unqualified claim of complete patient-level separation for all records. This limitation must be resolved if verified subject IDs become available.
+Three levels of grouping evidence are distinguished:
+
+1. **Record-level grouping (verified from the data):** every record belongs to exactly one split.
+2. **Inferred subject-equivalence grouping (documented, not verified per record):** PhysioNet reports 48 records from 47 subjects and identifies 201/202 as the only shared-subject pair. With that pair grouped, the 47 split keys correspond to 47 inferred subject-equivalence groups, assuming the published cohort count is complete and correct. The Day 8 [patient mapping audit](patient_mapping_audit.md) documents this inference.
+3. **Verified patient identifiers (not available):** the dataset provides no patient identifier for each record.
+
+The split uses record-derived grouping with the documented 201/202 subject equivalence incorporated. This gives 47 inferred subject-equivalence groups, and no group overlaps across train, validation, and test. Because explicit patient identifiers are not available for all records, this should not be described as independently verified patient-level separation.
 
 ## Strategy and reproducibility
 
@@ -24,7 +30,7 @@ The split therefore provides record separation and keeps the one documented shar
 | Test | 7 | 7 | 14.58% | 15,559 | 14.21% |
 | **Total** | **47** | **48** | **100%** | **109,460** | **100%** |
 
-“Groups” are the available separation keys and are not a verified patient count. Validation has eight records because the grouped 201/202 pair is assigned together. The actual segment proportions are close to the requested proportions; record and group shares differ because one group contains two records and segment counts differ by record.
+“Groups” are the split keys, which are the 47 inferred subject-equivalence groups. They are not a verified patient count. Validation has eight records because the grouped 201/202 pair is assigned together. The actual segment proportions are close to the requested proportions; record and group shares differ because one group contains two records and segment counts differ by record.
 
 ## Class counts by source label
 
@@ -61,9 +67,9 @@ The first split preflight found that the Day 3 segmentation code created NumPy i
 
 ## Limitations and Day 5 review
 
-1. A full verified patient-to-record table is not available; record-level separation is guaranteed, while person-level separation is guaranteed only for the known 201/202 pair. Obtain/confirm a complete subject mapping before describing this as patient-held-out evaluation.
+1. Explicit patient identifiers are not available for all records. The official 48-record/47-subject count plus the documented 201/202 pair supports 47 inferred subject-equivalence groups, but that inference depends on the published count being complete and correct. Describe the split as subject-equivalence-group-disjoint, not as independently verified patient-level separation. If an authoritative source identifies another shared-subject pair, the grouping and split must be revised.
 2. The random group assignment is not class-stratified, and several labels are absent in validation or test. The seed is fixed for reproducibility but does not solve this support limitation.
 3. The Day 3 source-symbol identity mapping remains a provisional label representation, not a final classification target.
-4. Records 201 and 202 being from the same analog tape is the documented grouping basis; it is not used to infer any other patient identities.
+4. Records 201 and 202 are explicitly documented as the same subject. The remaining 46 singleton groups are inferred from the 48-record/47-subject total rather than verified individually. No names or demographic matches are used to assign identity.
 
 No model training, balancing, augmentation, federated learning, privacy mechanism, or blockchain implementation was added. The notebook [`03_dataset_splitting_validation.ipynb`](../notebooks/03_dataset_splitting_validation.ipynb) reproduces the split integrity and distribution inspection.

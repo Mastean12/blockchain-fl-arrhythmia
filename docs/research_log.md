@@ -168,3 +168,41 @@ The project has a reproducible centralized 1D CNN reference point, but its 15-sy
 ## Decision before Federated Learning
 
 **NOT READY.** Review the label taxonomy, available patient mapping, and evaluation/split protocol before using this under-supported baseline as the comparator for FL experiments. No federated learning, privacy, blockchain, or proposed algorithm was implemented during this checkpoint. The README required no change. `pytest` is not installed; all tests were run successfully with `unittest`.
+
+
+# Day 8 — Dataset, label taxonomy and leakage audit
+
+**Date:** 2026-10-05
+
+## Completed
+
+- Recounted all local MIT-BIH `.atr` annotation symbols with WFDB and confirmed the Day 2 table: 112,647 annotations across 23 symbols, comprising 109,494 beat symbols and 3,153 non-beat/event symbols.
+- Traced each of the 15 configured beat symbols through preprocessing, saved segment labels/source symbols, and sorted CNN class indices. The mapping is identity; eight non-beat/event symbols are explicitly excluded from beat windows; 34 incomplete edge windows are dropped by the documented boundary policy. No beat class is merged or silently discarded.
+- Created `docs/label_taxonomy_audit.md`, `docs/patient_mapping_audit.md`, and executed `notebooks/06_label_and_leakage_audit.ipynb`. The notebook produced per-symbol, per-class, split, test-support, and group-support tables plus two new distribution figures.
+- Rechecked all 15 output classes, class totals, train/validation/test counts, source-label alignment, split group/record disjointness, and existing split integrity.
+- Reviewed and corrected `docs/dataset_splits.md` to incorporate the subject-equivalence evidence from the official local dataset documentation.
+
+## Findings and decisions
+
+The current model has 15 output classes, not a merged eight-class taxonomy. Eight original labels have positive support in the test split; seven have no positive test instances. `N` has 75,028 processed segments, versus `S` 2, `e` 16, and `Q` 33. `S` appears in one group, `e` in one, and `E` in two; three-way class coverage cannot be created for those labels without breaking group separation. In the current test results, accuracy is 0.7688 and macro-F1 is 0.1399; `A`, `F`, `L`, `Q`, and `a` have zero F1 despite positive test support. No class merge or retraining was made to improve scores.
+
+The label map remains a transparent exploratory source-symbol baseline, but its suitability as the final research task and the exclusion of rhythm/event symbols need a literature- and question-based decision. Preserve the existing baseline; do not revise its mapping or retrain until the target definition and an adequately supported evaluation protocol are agreed.
+
+The local PhysioNet introduction reports 48 records from 47 subjects and identifies records 201/202 as the same subject. That pair accounts for the one-record excess; thus the remaining 46 records are singleton subject-equivalence groups, assuming the published cohort count is complete. The current 47-group split keeps 201/202 together and has no pairwise record/group overlap or duplicate segment-plus-label samples. This supports separation by 47 inferred subject-equivalence groups. Because explicit patient identifiers are not available for all records, it is not independently verified patient-level separation. Test class coverage remains limited even though no known cross-split subject-equivalence leakage was found.
+
+**Documentation reconciliation (Day 8.5):** before freezing the baseline, `dataset_splits.md`, `evaluation_baseline.md`, `patient_mapping_audit.md`, and `label_taxonomy_audit.md` were reconciled. They now consistently separate record-level grouping, inferred subject-equivalence grouping, and verified patient identifiers (which are not available). Only documentation changed; no data, split, model, or metric was modified.
+
+## Validation and issues
+
+- All existing 15 `unittest` tests passed; `validate_saved_splits` completed successfully; notebook assertions confirmed all raw symbols are categorized and split distributions reproduce the saved metadata.
+- Day 6 evaluation artifact SHA-256 hashes were captured before the audit and compared afterward; the model, test predictions, confusion matrix, reports, ROC files, and figures remain unchanged.
+- The first notebook execution found an audit-code error that summed `Counter` keys rather than their values; the assertion was corrected and the notebook then executed successfully. Jupyter emitted a Windows Proactor/ZeroMQ fallback runtime warning and an unencrypted TCP kernel warning during local execution; no notebook cell error remained.
+- No raw dataset, processed split, model, taxonomy, or Day 6 artifact was modified. No commit or push was made.
+
+## Unresolved questions
+
+- Which literature-supported task taxonomy best matches arrhythmia detection, and should rhythm/event symbols or blocked atrial events be within scope?
+- Should evaluation retain all 15 labels and explicitly report undefined metrics for unsupported test labels, or define a task-specific subset before another model run?
+- What evaluation claims are supportable for `S`, `e`, and `E`, given their occurrence in only one, one, and two subject groups respectively?
+- After the target taxonomy and evaluation objective are fixed, does the split need a new version, and what class coverage is feasible without subject leakage?
+- How much of the weak class performance reflects the mapping/task definition, data support, model behavior, or split composition? No causal conclusion is established by this audit.

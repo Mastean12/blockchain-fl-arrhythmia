@@ -52,7 +52,9 @@ Macro and micro AUROC summarize different aggregations. The ROC figure displays 
 
 The overall accuracy, weighted F1, and micro AUROC should not obscure weak class-level detection. The model has zero F1 for `A`, `F`, `L`, `Q`, and `a` despite positive test support; it detected no examples from `A`, `F`, `L`, `Q`, or `a`. The `L` class has 2,001 test examples and zero recall. `E`, `J`, `R`, `S`, `e`, `f`, and `j` have no test positives under the Day 4 split; their sensitivity and AUROC are undefined. See the class-level CSV for each precision, recall, sensitivity, specificity, F1, support, and AUC.
 
-The test class support is strongly imbalanced and the validation-derived group split omitted several classes from test. These results are specific to the saved model and this split; they do not establish performance on a population or verified subject-held-out cohort. The Day 4 limitation about incomplete person-to-record IDs still applies.
+The test class support is strongly imbalanced and the validation-derived group split omitted several classes from test. These results are specific to the saved model and this split; they do not establish performance on a population.
+
+**Test cohort and separation caveat (reconciled after the Day 8 audit):** the test set is 7 complete records (100, 101, 107, 113, 214, 219, 233), forming 7 of the 47 inferred subject-equivalence groups. No record or group in test also appears in train or validation, and the documented same-subject pair 201/202 is entirely in validation. The groups are record-derived, with the documented 201/202 subject equivalence incorporated; the 47-group structure is inferred from PhysioNet's 48-record/47-subject count. Because explicit patient identifiers are not available for all records, the test set should not be described as an independently verified patient-held-out cohort. See [`dataset_splits.md`](dataset_splits.md) and [`patient_mapping_audit.md`](patient_mapping_audit.md).
 
 ## Saved outputs
 

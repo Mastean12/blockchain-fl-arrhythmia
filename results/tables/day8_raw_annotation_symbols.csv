@@ -1,0 +1,24 @@
+source_symbol,source_description,annotation_type,raw_count
+!,Ventricular flutter wave,non-beat/event,472
+"""",Comment annotation,non-beat/event,437
++,Rhythm change marker; rhythm label is carried in the auxiliary note,non-beat/event,1291
+/,Paced beat,beat,7028
+A,Atrial premature beat,beat,2546
+E,Ventricular escape beat,beat,106
+F,Fusion of ventricular and normal beat,beat,803
+J,Nodal (junctional) premature beat,beat,83
+L,Left bundle branch block beat,beat,8075
+N,Normal beat,beat,75052
+Q,Unclassifiable beat,beat,33
+R,Right bundle branch block beat,beat,7259
+S,Supraventricular premature or ectopic beat (atrial or nodal),beat,2
+V,Premature ventricular contraction,beat,7130
+[,Start of ventricular flutter/fibrillation,non-beat/event,6
+],End of ventricular flutter/fibrillation,non-beat/event,6
+a,Aberrated atrial premature beat,beat,150
+e,Atrial escape beat,beat,16
+f,Fusion of paced and normal beat,beat,982
+j,Nodal (junctional) escape beat,beat,229
+x,Non-conducted P-wave (blocked atrial premature beat),non-beat/event,193
+|,Isolated QRS-like artifact,non-beat/event,132
+~,Signal-quality change marker,non-beat/event,616
