@@ -1,14 +1,31 @@
-﻿# Direct dependencies for the initial research environment (Python 3.12).
+# Python dependencies for the research prototype.
+#
+# Requires Python 3.12 (64-bit). Versions are the exact ones used to produce every
+# result in results/. Install inside a virtual environment:
+#   python -m venv .venv
+#   .venv\Scripts\activate          (Windows)   |   source .venv/bin/activate   (Linux/macOS)
+#   python -m pip install -r requirements.txt
+#
+# All experiments ran on CPU. On Linux, `pip install torch` pulls a CUDA build by default;
+# for an identical CPU setup use:  pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+
+# Core numerics and data handling
 numpy==2.5.3
 pandas==3.0.6
-scipy==1.18.1
+scipy==1.18.1          # Butterworth filtering, DP accountant (GDP / RDP)
+
+# Machine learning
+torch==2.14.1          # 1D CNN, centralized and federated training
+scikit-learn==1.9.1    # evaluation metrics (F1, AUROC, confusion matrices)
+
+# ECG data access
+wfdb==4.3.1            # reading MIT-BIH WFDB records and annotations
+
+# Figures
 matplotlib==3.11.2
-seaborn==0.13.2
-scikit-learn==1.9.1
-wfdb==4.3.1
+
+# Homomorphic encryption (Day 14 HE-FedAvg experiment only)
+tenseal==0.3.18        # CKKS via Microsoft SEAL; prebuilt wheels for CPython 3.12
+
+# Notebooks (also provides ipykernel, nbconvert and nbformat)
 jupyterlab==4.6.4
-torch==2.14.1
-torchvision==0.29.1
-torchaudio==2.11.0
-tqdm==4.70.1
-tenseal==0.3.18
