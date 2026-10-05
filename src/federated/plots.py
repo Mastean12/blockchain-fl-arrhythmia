@@ -237,3 +237,24 @@ def plot_dp_noise_vs_signal(diagnostics, path):
     ax.legend(fontsize=8, frameon=False, ncol=3)
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+def plot_he_error(rounds, path):
+    """Per-round CKKS error of the decrypted aggregate (max and RMS, log scale), one colour per seed."""
+    styles = _seed_style(rounds["seed"].unique())
+    fig, ax = plt.subplots(figsize=(10, 5), layout="constrained")
+    _style(ax)
+    for seed, run in rounds.groupby("seed"):
+        color, marker = styles[seed]
+        ax.plot(run["round"], run["aggregate_max_abs_error"], color=color, marker=marker, markersize=5, linewidth=2,
+                label=f"seed {seed}: max |error|")
+        ax.plot(run["round"], run["aggregate_rms_error"], color=color, marker=marker, markersize=5, linewidth=2,
+                linestyle=":", markerfacecolor="none", label=f"seed {seed}: RMS error")
+    ax.set_yscale("log")
+    ax.set_xlabel("Communication round", color=MUTED)
+    ax.set_ylabel("Decrypted aggregate minus exact float64 aggregate", color=MUTED)
+    ax.set_title("HE-FedAvg: CKKS numerical error of the aggregated update per round", loc="left",
+                 fontsize=11, color=INK)
+    ax.legend(fontsize=8, frameon=False, ncol=3)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

@@ -1,0 +1,172 @@
+{
+  "centralized_validation_reference_epoch1": {
+    "validation_accuracy": 0.6853403461561984,
+    "validation_macro_f1": 0.1737207554842273
+  },
+  "client_segments": [
+    14025,
+    17021,
+    18076,
+    14416,
+    14012
+  ],
+  "config": {
+    "aggregation": {
+      "method": "FedAvg",
+      "weighting": "client_training_samples"
+    },
+    "data": {
+      "label_config": "configs/preprocessing/mitbih_v1.json",
+      "split_root": "data/splits/mitbih_v1"
+    },
+    "experiment_id": "he_fedavg_v1_natural_s2024",
+    "homomorphic_encryption": {
+      "aggregation": "sample_weighted_fedavg",
+      "coeff_mod_bit_sizes": [
+        60,
+        40,
+        40,
+        60
+      ],
+      "correctness_tolerance": "max |HE - plaintext| <= 1e-5 * max(1, max |plaintext|)",
+      "enabled": true,
+      "encrypted_entries": "All floating-point state entries (weights, biases, BatchNorm affine and running statistics); integer BatchNorm counters stay plaintext (public function of sample counts)",
+      "encrypted_quantity": "client_update",
+      "global_scale_bits": 40,
+      "key_model": "Clients share one CKKS secret key (simulated key holders); the server holds the public context only",
+      "library": "tenseal",
+      "library_version": "0.3.18",
+      "poly_modulus_degree": 8192,
+      "scheme": "CKKS",
+      "security_basis": "Total coefficient modulus 200 bits <= 218 bits allowed for N=8192 at 128-bit classical security (HomomorphicEncryption.org standard, enforced by Microsoft SEAL)",
+      "security_level_bits": 128,
+      "server_operations": "plaintext-scalar multiplication by public weight n_k / sum n, then ciphertext addition; no secret key on the server"
+    },
+    "model": {
+      "architecture": "centralized_cnn_v1",
+      "class": "src.models.cnn1d.ECG1DCNN",
+      "dropout": 0.3
+    },
+    "model_selection": {
+      "metric": "validation_loss",
+      "mode": "min",
+      "split": "validation"
+    },
+    "output_root": "results",
+    "participation": {
+      "fraction": 1.0
+    },
+    "partition": {
+      "min_client_segments": 1000,
+      "num_clients": 5,
+      "seed": 2024,
+      "strategy": "random_group_equal_count"
+    },
+    "random_seed": 2024,
+    "runtime": {
+      "cpu_threads": 8,
+      "device": "cpu",
+      "evaluation_batch_size": 512,
+      "num_workers": 0
+    },
+    "training": {
+      "batch_size": 256,
+      "client_optimizer_state": "reset_each_round",
+      "learning_rate": 0.001,
+      "local_epochs": 1,
+      "loss": "CrossEntropyLoss",
+      "optimizer": "Adam",
+      "rounds": 20,
+      "shuffle_training": true
+    }
+  },
+  "experiment_id": "he_fedavg_v1_natural_s2024",
+  "final_round_validation": {
+    "client_train_accuracy_weighted": 0.9554609929078015,
+    "client_train_loss_weighted": 0.17804859374417442,
+    "elapsed_seconds": 109.15403329999936,
+    "participants": 5,
+    "round": 20,
+    "validation_accuracy": 0.7157360406091371,
+    "validation_loss": 1.297682682590509,
+    "validation_macro_f1": 0.09098693155774716,
+    "validation_macro_precision": 0.07609903054872452,
+    "validation_macro_recall": 0.13027075306172226,
+    "validation_weighted_f1": 0.6404047972498667
+  },
+  "homomorphic_encryption": {
+    "ciphertext_chunks_per_client": 3,
+    "config": {
+      "aggregation": "sample_weighted_fedavg",
+      "coeff_mod_bit_sizes": [
+        60,
+        40,
+        40,
+        60
+      ],
+      "correctness_tolerance": "max |HE - plaintext| <= 1e-5 * max(1, max |plaintext|)",
+      "enabled": true,
+      "encrypted_entries": "All floating-point state entries (weights, biases, BatchNorm affine and running statistics); integer BatchNorm counters stay plaintext (public function of sample counts)",
+      "encrypted_quantity": "client_update",
+      "global_scale_bits": 40,
+      "key_model": "Clients share one CKKS secret key (simulated key holders); the server holds the public context only",
+      "library": "tenseal",
+      "library_version": "0.3.18",
+      "poly_modulus_degree": 8192,
+      "scheme": "CKKS",
+      "security_basis": "Total coefficient modulus 200 bits <= 218 bits allowed for N=8192 at 128-bit classical security (HomomorphicEncryption.org standard, enforced by Microsoft SEAL)",
+      "security_level_bits": 128,
+      "server_operations": "plaintext-scalar multiplication by public weight n_k / sum n, then ciphertext addition; no secret key on the server"
+    },
+    "encrypted_entries": 10351,
+    "key_generation_seconds": 0.38460250000025553,
+    "public_context_bytes": 1859430,
+    "slots": 4096
+  },
+  "model_path": "results/he/models/federated/he_fedavg_v1_natural_s2024_global.pt",
+  "num_clients": 5,
+  "rounds": 20,
+  "selected_round_by_validation_loss": 17,
+  "selected_round_validation": {
+    "client_train_accuracy_weighted": 0.9533333333333333,
+    "client_train_loss_weighted": 0.18482939714879315,
+    "elapsed_seconds": 92.74186720000034,
+    "participants": 5,
+    "round": 17,
+    "validation_accuracy": 0.7155525655923185,
+    "validation_loss": 1.1906843367982485,
+    "validation_macro_f1": 0.0915600278982683,
+    "validation_macro_precision": 0.07649450698778053,
+    "validation_macro_recall": 0.1301116184986329,
+    "validation_weighted_f1": 0.6394888280357317
+  },
+  "software": {
+    "numpy": "2.5.3",
+    "torch": "2.14.1+cpu"
+  },
+  "test_evaluated": true,
+  "test_metrics": {
+    "accuracy": 0.593547143132592,
+    "auroc_defined_class_count": 8,
+    "class_count": 15,
+    "macro_auroc_ovr_defined_classes": 0.6348034033365726,
+    "macro_f1": 0.07404609530115604,
+    "macro_precision": 0.07073832518546694,
+    "macro_recall_all_15_labels_zero_for_no_support": 0.10767326100071024,
+    "macro_sensitivity_supported_classes": 0.2018873643763317,
+    "macro_specificity_all_classes": 0.9643263756098206,
+    "micro_auroc_ovr_flattened": 0.9479005883890105,
+    "micro_f1": 0.593547143132592,
+    "micro_precision": 0.593547143132592,
+    "micro_recall": 0.593547143132592,
+    "weighted_auroc_ovr_defined_classes": 0.8820377526146836,
+    "weighted_f1": 0.5817176244785868,
+    "weighted_precision": 0.608664205219773,
+    "weighted_recall": 0.593547143132592,
+    "weighted_sensitivity": 0.593547143132592,
+    "weighted_specificity": 0.8713484910147175
+  },
+  "trainable_parameters": 10127,
+  "training_elapsed_seconds": 109.46773010000106,
+  "validation_segments": 16351
+}

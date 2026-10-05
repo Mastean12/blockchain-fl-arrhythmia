@@ -441,3 +441,48 @@ At client-level ε = 7.98 with only 5 clients, DP-FedAvg destroys utility. This 
 - Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
 
 No homomorphic encryption, blockchain, attack, or proposed-algorithm code was implemented. Nothing was committed or pushed.
+
+
+# Day 14 — Homomorphic encryption for federated aggregation (HE-FedAvg)
+
+**Date:** 2026-10-05
+
+## Purpose
+
+This is an isolated, one-factor experiment: client updates are encrypted before server aggregation, aggregated homomorphically, decrypted, and FL continues. It is not combined with DP, blockchain, attacks, or the proposed algorithm. Full report: `docs/homomorphic_encryption.md`. Outputs: `results/he/`.
+
+## Implementation
+
+- **Environment:** no HE library was installed. TenSEAL 0.3.18 (OpenMined; Microsoft SEAL backend) was installed from the official `cp312-win_amd64` wheel into `.venv` and pinned in `requirements.txt`. No other package changed. Pyfhel had no wheel for this platform.
+- **Scheme:** CKKS with N = 8192 (4,096 slots), coefficient modulus [60, 40, 40, 60] = 200 bits (≤ 218 for 128-bit security), scale 2⁴⁰. Each update of 10,351 floating-point entries needs 3 ciphertexts.
+- **Protocol:**
+  - Clients train in plaintext, then encrypt Δ_k = w_k − w_t.
+  - The server holds only the public context and computes Enc(Σ p_k Δ_k) with public FedAvg weights.
+  - The clients (shared secret key) decrypt the aggregate.
+  - The integer BatchNorm counters stay plaintext.
+- **Code:** `src/he/ckks.py`, `aggregation.py`, `config.py`, `report.py`, plus a `homomorphic_encryption` branch in `run_fedavg.py`. HE cannot be combined with DP or local BatchNorm, and the default path still reproduces the official Day 10 model bit-identically.
+- **Correctness first:** `tests/test_he.py` was written and passed (5 tests) before any FL run, with tolerance max |HE − plaintext| ≤ 10⁻⁵ · max(1, max |x|) against an observed error of about 1.2·10⁻⁷ relative. Four integration and configuration tests were added afterwards (9 HE tests, 59 in total).
+
+## Results (paired with Day 11 plaintext FedAvg, natural partition)
+
+- **Seeds 42 and 123:** HE matches plaintext to four decimals (s42 accuracy 0.7069, macro-F1 0.0849 against 0.0848; s123 identical).
+- **Seed 2024:** the same round (17) is selected, but the HE model differs: accuracy 0.5935 against 0.5690, macro-F1 0.0740 against 0.0717.
+- **3-seed means:** macro-F1 0.0858 ± 0.0123 against 0.0851 ± 0.0134; accuracy 0.6649 ± 0.0621 against 0.6567 ± 0.0762.
+- **Collapse unchanged:** the `N`/`V` collapse is the same in both arms.
+- **Numerical error per round:** max absolute error ≤ 1.30·10⁻⁷, RMS about 3.5·10⁻⁹, relative error ≤ 5.8·10⁻⁷. The decrypted state is within 1.34·10⁻⁷ of plaintext FedAvg from the same client states, and every round is within tolerance.
+- **Trajectory drift:** the paired trajectories diverge from round 2 onward (state difference at the selected round 5·10⁻⁴ to 0.15). This is attributed, as a hypothesis, to training's sensitivity to tiny perturbations (Adam's normalised steps), not to systematic HE error. HE runs are not bit-reproducible because SEAL's encryption randomness is unseeded.
+- **Time:** encryption 0.017 s per client per round, server aggregation 0.020 s, decryption 0.004 s, key generation 0.37 s. HE totals about 2.2 s over 20 rounds, roughly 2% of training time (timing not controlled).
+- **Communication:** 994 KB uploaded per client per round (24.0× plaintext), 705 KB downloaded (17.0×), 169.9 MB against 8.3 MB over 20 rounds (**20.5×**), plus a one-time 1.86 MB public context.
+
+## Interpretation
+
+HE-FedAvg preserves FedAvg utility to within CKKS precision, at about 20× the communication cost and negligible compute for this small model. It hides individual updates from an honest-but-curious server only. The aggregate and the global model remain visible to the key holders. There is no formal guarantee about model leakage, no protection against malicious parties, and key management is simulated with one shared secret key.
+
+## Unresolved questions
+
+- Threshold or multi-key HE, so that no single client can decrypt another client's update, and realistic key distribution.
+- How communication scales with larger models (ciphertexts grow with ⌈parameters / 4096⌉), and whether quantised or packed encodings could reduce the 20× overhead.
+- A combined HE + DP design, explicitly out of scope today.
+- Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
+
+No DP, blockchain, attack, or proposed-algorithm code was implemented in Day 14. Nothing was committed or pushed.

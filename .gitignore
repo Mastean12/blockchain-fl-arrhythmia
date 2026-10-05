@@ -22,3 +22,8 @@ results/diagnostics/*/metrics/federated/*.npz
 # (src.federated.robustness.run_all with configs/privacy/dp_fedavg_v1.json).
 results/privacy/models/
 results/privacy/metrics/federated/*.npz
+
+# Day 14 HE runs: per-run checkpoints and prediction arrays are regenerable
+# (src.federated.robustness.run_all with configs/he/he_fedavg_v1.json).
+results/he/models/
+results/he/metrics/federated/*.npz

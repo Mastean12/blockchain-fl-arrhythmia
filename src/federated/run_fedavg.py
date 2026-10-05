@@ -91,6 +91,15 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         if config["aggregation"].get("batchnorm", "aggregate") != "aggregate":
             raise ValueError("Differential privacy is a separate one-factor experiment; do not combine with local BatchNorm")
         accounting = validate_privacy_config(privacy, config["training"]["rounds"], config["participation"]["fraction"])
+    he_cfg = config.get("homomorphic_encryption")
+    he_session = None
+    if he_cfg is not None:
+        if privacy is not None or config["aggregation"].get("batchnorm", "aggregate") != "aggregate":
+            raise ValueError("HE-FedAvg is a separate one-factor experiment; do not combine with DP or local BatchNorm")
+        from src.he.aggregation import he_fedavg_aggregate
+        from src.he.ckks import CKKSSession
+        from src.he.config import validate_he_config
+        he_params = validate_he_config(he_cfg)
     root = Path(output_root or config["output_root"])
     exp = config["experiment_id"]
     model_dir = root / "models" / "federated"
@@ -134,6 +143,15 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     local_bn = {}
     client_validation = []
     dp_rounds, dp_clients = [], []
+    he_rounds = []
+    if he_cfg is not None:
+        key_start = time.perf_counter()
+        he_session = CKKSSession(he_params)
+        float_entries = sum(v.numel() for v in global_state.values() if v.is_floating_point())
+        he_setup = {"key_generation_seconds": time.perf_counter() - key_start,
+                    "public_context_bytes": len(he_session.public_context_bytes), "slots": he_params.slots,
+                    "encrypted_entries": float_entries,
+                    "ciphertext_chunks_per_client": he_session.chunks(float_entries)}
 
     history = [{"round": 0, "participants": 0, "client_train_loss_weighted": None,
                 "client_train_accuracy_weighted": None, "elapsed_seconds": 0.0,
@@ -162,7 +180,21 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
                                    "num_samples": update["num_samples"], "train_loss": update["train_loss"],
                                    "train_accuracy": update["train_accuracy"]})
         counts = [u["num_samples"] for u in updates]
-        if privacy is None:
+        if he_session is not None:
+            global_state, he = he_fedavg_aggregate(global_state, [u["state"] for u in updates], counts, he_session)
+            he_rounds.append({"round": round_index, "participants": len(selected),
+                              "encrypt_seconds_all_clients": he["encrypt_seconds"],
+                              "aggregate_seconds_server": he["aggregate_seconds"],
+                              "decrypt_seconds": he["decrypt_seconds"],
+                              "uplink_ciphertext_bytes_total": int(sum(he["uplink_ciphertext_bytes"])),
+                              "uplink_ciphertext_bytes_per_client_mean": float(np.mean(he["uplink_ciphertext_bytes"])),
+                              "downlink_ciphertext_bytes_per_client": he["downlink_ciphertext_bytes"],
+                              "aggregate_max_abs_error": he["aggregate_max_abs_error"],
+                              "aggregate_rms_error": he["aggregate_rms_error"],
+                              "aggregate_max_abs_value": he["aggregate_max_abs_value"],
+                              "state_max_abs_error_vs_plaintext_fedavg": he["state_max_abs_error_vs_plaintext_fedavg"],
+                              "dimension": he["dimension"]})
+        elif privacy is None:
             global_state = fedavg_aggregate([u["state"] for u in updates], counts)
         else:
             global_state, dp = dp_fedavg_aggregate(
@@ -210,6 +242,11 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     torch.save(artifact, model_path)
     if client_validation:
         _write_csv(metrics_dir / f"{exp}_client_validation_history.csv", client_validation)
+    if he_session is not None:
+        import tenseal
+        _write_csv(metrics_dir / f"{exp}_he_round_diagnostics.csv", he_rounds)
+        _write_json(metrics_dir / f"{exp}_he_setup.json",
+                    {"he_config": he_cfg, **he_setup, "tenseal_version": tenseal.__version__})
     if privacy is not None:
         _write_csv(metrics_dir / f"{exp}_dp_round_diagnostics.csv", dp_rounds)
         _write_csv(metrics_dir / f"{exp}_dp_client_update_norms.csv", dp_clients)
@@ -244,6 +281,8 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     }
     if privacy is not None:
         run_summary["privacy"] = {"config": privacy, "accounting": accounting}
+    if he_session is not None:
+        run_summary["homomorphic_encryption"] = {"config": he_cfg, **he_setup}
     if bn_mode == "local":
         run_summary["batchnorm_mode"] = bn_mode
         run_summary["batchnorm_state_keys"] = bn_keys
@@ -252,7 +291,8 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
                                                   device, eval_bs, overwrite)
         plots.plot_confusion_matrix(result["confusion_matrix"], class_names,
                                     ("FedBN-style evaluation model" if bn_mode == "local"
-                                     else "DP-FedAvg global model" if privacy is not None else "FedAvg global model")
+                                     else "DP-FedAvg global model" if privacy is not None
+                                     else "HE-FedAvg global model" if he_session is not None else "FedAvg global model")
                                     + f" (round {best['round']}) — held-out test confusion matrix",
                                     figures_dir / f"{exp}_confusion_matrix.png")
         aggregate_rows, per_class_rows = compare_with_centralized(result["aggregate"], result["per_class"], label=exp)

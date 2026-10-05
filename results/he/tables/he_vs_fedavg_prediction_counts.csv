@@ -1,0 +1,7 @@
+seed,arm,run_id,/,A,E,F,J,L,N,Q,R,S,V,a,e,f,j,share_N_or_V,classes_predicted
+42,fedavg,fedavg_v1_natural_s42,0,0,0,0,0,0,10602,0,0,0,4957,0,0,0,0,1.0,2
+42,he_fedavg,he_fedavg_v1_natural_s42,0,0,0,0,0,0,10601,0,0,0,4958,0,0,0,0,1.0,2
+123,fedavg,fedavg_v1_natural_s123,0,0,0,0,0,0,14910,0,36,0,613,0,0,0,0,0.9976862266212482,3
+123,he_fedavg,he_fedavg_v1_natural_s123,0,0,0,0,0,0,14910,0,36,0,613,0,0,0,0,0.9976862266212482,3
+2024,fedavg,fedavg_v1_natural_s2024,1,0,0,0,0,2,8721,0,4,0,6831,0,0,0,0,0.9995500996207982,5
+2024,he_fedavg,he_fedavg_v1_natural_s2024,0,0,0,0,0,2,9069,0,2,0,6486,0,0,0,0,0.9997429140690276,4

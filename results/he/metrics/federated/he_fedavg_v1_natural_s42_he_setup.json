@@ -1,0 +1,30 @@
+{
+  "ciphertext_chunks_per_client": 3,
+  "encrypted_entries": 10351,
+  "he_config": {
+    "aggregation": "sample_weighted_fedavg",
+    "coeff_mod_bit_sizes": [
+      60,
+      40,
+      40,
+      60
+    ],
+    "correctness_tolerance": "max |HE - plaintext| <= 1e-5 * max(1, max |plaintext|)",
+    "enabled": true,
+    "encrypted_entries": "All floating-point state entries (weights, biases, BatchNorm affine and running statistics); integer BatchNorm counters stay plaintext (public function of sample counts)",
+    "encrypted_quantity": "client_update",
+    "global_scale_bits": 40,
+    "key_model": "Clients share one CKKS secret key (simulated key holders); the server holds the public context only",
+    "library": "tenseal",
+    "library_version": "0.3.18",
+    "poly_modulus_degree": 8192,
+    "scheme": "CKKS",
+    "security_basis": "Total coefficient modulus 200 bits <= 218 bits allowed for N=8192 at 128-bit classical security (HomomorphicEncryption.org standard, enforced by Microsoft SEAL)",
+    "security_level_bits": 128,
+    "server_operations": "plaintext-scalar multiplication by public weight n_k / sum n, then ciphertext addition; no secret key on the server"
+  },
+  "key_generation_seconds": 0.3722992000002705,
+  "public_context_bytes": 1859293,
+  "slots": 4096,
+  "tenseal_version": "0.3.18"
+}

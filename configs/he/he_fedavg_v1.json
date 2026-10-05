@@ -1,0 +1,44 @@
+{
+  "robustness_id": "he_fedavg_v1",
+  "study_title": "HE-FedAvg (CKKS, TenSEAL, N=8192, scale 2^40)",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [42, 123, 2024],
+  "seed_controls": ["random_seed", "partition.seed"],
+  "seed_note": "CKKS encryption randomness comes from Microsoft SEAL's internal CSPRNG and is not seeded, so HE runs are not bit-reproducible; differences are at CKKS precision.",
+  "primary_partition": "random_group_equal_count",
+  "diagnostic_partitions": [],
+  "run_id_template": "he_fedavg_v1_{partition_label}_s{seed}",
+  "partition_labels": {
+    "random_group_equal_count": "natural"
+  },
+  "extra_overrides": {
+    "homomorphic_encryption": {
+      "enabled": true,
+      "scheme": "CKKS",
+      "library": "tenseal",
+      "library_version": "0.3.18",
+      "poly_modulus_degree": 8192,
+      "coeff_mod_bit_sizes": [60, 40, 40, 60],
+      "global_scale_bits": 40,
+      "security_level_bits": 128,
+      "security_basis": "Total coefficient modulus 200 bits <= 218 bits allowed for N=8192 at 128-bit classical security (HomomorphicEncryption.org standard, enforced by Microsoft SEAL)",
+      "encrypted_quantity": "client_update",
+      "encrypted_entries": "All floating-point state entries (weights, biases, BatchNorm affine and running statistics); integer BatchNorm counters stay plaintext (public function of sample counts)",
+      "aggregation": "sample_weighted_fedavg",
+      "server_operations": "plaintext-scalar multiplication by public weight n_k / sum n, then ciphertext addition; no secret key on the server",
+      "key_model": "Clients share one CKKS secret key (simulated key holders); the server holds the public context only",
+      "correctness_tolerance": "max |HE - plaintext| <= 1e-5 * max(1, max |plaintext|)"
+    }
+  },
+  "comparator": {
+    "description": "Day 11 standard FedAvg, natural partition, same seeds (paired: same partition, initialization and training order)",
+    "runs_table": "results/robustness/tables/robustness_runs.csv",
+    "tables_dir": "results/robustness/tables/federated",
+    "run_id_template": "fedavg_v1_natural_s{seed}"
+  },
+  "arm_label": "he_fedavg",
+  "arm_title": "HE-FedAvg\n(CKKS)",
+  "comparison_prefix": "he_vs_fedavg",
+  "paired_title": "Seed-paired comparison: same partition, initialization and training order; only encrypted aggregation differs",
+  "output_root": "results/he"
+}
