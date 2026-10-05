@@ -149,3 +149,22 @@ The source-symbol identity mapping is still provisional, and validation/test sup
 ## Limitations
 
 The macro/weighted/micro summaries differ substantially under class imbalance. Validation/test split support is inadequate or absent for several labels, and person-level identity is not fully available beyond the known 201/202 grouping. Specificity is reported with its one-vs-rest formula and must not be interpreted without sensitivity/F1. The test metrics are for this model and this split only; they do not establish population performance. No federated learning, privacy mechanism, blockchain, or proposed algorithm was implemented. No commit or push was made.
+
+# Day 7 — Research checkpoint
+
+**Date:** 2026-10-05
+
+## Completed
+
+- Audited the Day 1–6 documentation, source/configuration, saved split metadata, centralized model artifacts, Day 6 metrics, and Git history.
+- Created `docs/research_checkpoint_day7.md` with the current baseline, actual dataset/split/test statistics, preprocessing and model decisions, limitations, unresolved questions, and readiness assessment.
+- Revalidated all saved split shards: no record/group overlap or cross-split duplicate segment content was found; expected shapes, labels, and finite values passed validation.
+- Ran all 15 existing `unittest` tests successfully and recomputed aggregate and per-class metrics from saved test predictions; all matched the Day 6 metric files.
+
+## Major findings and limitations
+
+The project has a reproducible centralized 1D CNN reference point, but its 15-symbol mapping is provisional. Train/validation/test contain 77,550/16,351/15,559 segments (70.85%/14.94%/14.21%); record and available group keys are disjoint, but complete patient-held-out status cannot be verified. Test accuracy is 0.7688, macro-F1 0.1399, weighted-F1 0.7208, and macro OVR AUROC 0.6238 over eight supported labels. `A`, `F`, `L`, `Q`, and `a` have zero test F1 despite support; seven labels have no test positives. Training/validation loss behavior raises an overfitting warning. These results do not establish population performance or clinical utility.
+
+## Decision before Federated Learning
+
+**NOT READY.** Review the label taxonomy, available patient mapping, and evaluation/split protocol before using this under-supported baseline as the comparator for FL experiments. No federated learning, privacy, blockchain, or proposed algorithm was implemented during this checkpoint. The README required no change. `pytest` is not installed; all tests were run successfully with `unittest`.
