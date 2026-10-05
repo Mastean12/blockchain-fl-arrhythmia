@@ -45,3 +45,11 @@ results/proposed/models/
 results/proposed/metrics/federated/*.npz
 results/proposed/calibration/models/
 results/proposed/calibration/metrics/federated/*.npz
+
+# Day 19 ablation runs: per-run checkpoints, prediction arrays and global trajectories are regenerable
+# (src.federated.ablation.run_all with configs/ablation/ablation_v1.json).
+results/ablation/models/
+results/ablation/metrics/federated/*.npz
+# Per-run ablation figures are regenerable from the tracked per-run CSV/JSON outputs; the summary
+# figure results/ablation/figures/ablation_overview.png stays tracked.
+results/ablation/figures/federated/*.png

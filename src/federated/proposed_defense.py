@@ -18,6 +18,14 @@ counts n_k (prior weights p_k = n_k / sum n):
                       variances are floored at `bn_variance_floor`. Integer counters are
                       aggregated as in FedAvg (public function of sample counts).
 
+Ablation switches (Day 19): an optional ``components`` mapping with boolean keys
+``clipping``, ``cosine_filter``, ``norm_filter`` and ``robust_bn_stats`` turns each
+component off individually. Absent keys default to True, which is the frozen Day 18
+method. With ``robust_bn_stats`` off, BatchNorm running statistics are aggregated as
+the weighted mean over accepted clients with the same weights as the parameters (the
+FedAvg treatment of buffers), without median or variance floor. A disabled filter is
+still computed and logged but never flags a client.
+
 If no client is accepted, the round falls back to the coordinate-wise median of the
 clipped updates (logged). Mode "observe" computes and logs every statistic but returns
 plain FedAvg, which is used only for calibration on a non-evaluation seed.
@@ -36,6 +44,14 @@ from .fedavg import fedavg_aggregate
 
 REQUIRED = {"enabled", "name", "mode", "clipping_norm", "cosine_threshold", "norm_ratio_threshold",
             "bn_variance_floor", "reference_direction", "bn_running_stats"}
+COMPONENTS = ("clipping", "cosine_filter", "norm_filter", "robust_bn_stats")
+
+
+def components(defense):
+    """Effective component switches; absent keys mean the full (Day 18) method."""
+    switches = {name: True for name in COMPONENTS}
+    switches.update(defense.get("components", {}))
+    return switches
 
 
 def validate_defense_config(defense):
@@ -56,6 +72,9 @@ def validate_defense_config(defense):
         raise ValueError("Only the coordinate-wise median reference direction is implemented")
     if defense["bn_running_stats"] != "coordinate_wise_median_of_accepted":
         raise ValueError("Only median-of-accepted BatchNorm statistics are implemented")
+    given = defense.get("components", {})
+    if set(given) - set(COMPONENTS) or not all(isinstance(v, bool) for v in given.values()):
+        raise ValueError(f"components may only switch {COMPONENTS} with boolean values")
     return defense
 
 
@@ -92,12 +111,14 @@ def robust_aggregate(global_state, client_states, sample_counts, defense, keys, 
     if not client_states or len(client_states) != len(counts) or np.any(counts <= 0):
         raise ValueError("Need one positive sample count per client state")
     t0 = time.perf_counter()
+    switch = components(defense)
     prior = counts / counts.sum()
     reference = _flat(global_state, trainable)
     updates = torch.stack([_flat(s, trainable) - reference for s in client_states])
     norms = torch.linalg.vector_norm(updates, dim=1)
     C = float(defense["clipping_norm"])
-    factors = torch.clamp(C / torch.clamp(norms, min=1e-12), max=1.0)
+    factors = (torch.clamp(C / torch.clamp(norms, min=1e-12), max=1.0) if switch["clipping"]
+               else torch.ones_like(norms))
     clipped = updates * factors[:, None]
     median_direction = updates.median(dim=0).values
     cosines = np.array([_cos(u, median_direction) for u in updates])
@@ -105,7 +126,7 @@ def robust_aggregate(global_state, client_states, sample_counts, defense, keys, 
     ratios = (norms / max(median_norm, 1e-12)).numpy()
     low_cos = cosines < float(defense["cosine_threshold"])
     high_norm = ratios > float(defense["norm_ratio_threshold"])
-    flagged = low_cos | high_norm
+    flagged = (low_cos & switch["cosine_filter"]) | (high_norm & switch["norm_filter"])
     accepted = ~flagged
     fallback = not accepted.any()
     if fallback:
@@ -126,13 +147,18 @@ def robust_aggregate(global_state, client_states, sample_counts, defense, keys, 
             n = value.numel()
             out[key] = new_params[offset:offset + n].reshape(value.shape).to(value.dtype)
             offset += n
-        elif key in running:
+        elif key in running and switch["robust_bn_stats"]:
             stacked = torch.stack([s[key].to(torch.float64) for s in stats_from])
             stat = stacked.median(dim=0).values
             if key.endswith("running_var"):
                 floored += int((stat < floor).sum())
                 stat = stat.clamp_min(floor)
             out[key] = stat.to(value.dtype)
+        elif key in running:  # ablation: FedAvg-style weighted mean over accepted clients, no floor
+            stat_weights = prior if fallback else weights
+            stacked = torch.stack([s[key].to(torch.float64) for s in client_states])
+            out[key] = torch.tensordot(torch.as_tensor(stat_weights, dtype=torch.float64), stacked,
+                                       dims=1).to(value.dtype)
         else:
             out[key] = fedavg_ints[key].clone()
     elapsed = time.perf_counter() - t0
@@ -142,7 +168,7 @@ def robust_aggregate(global_state, client_states, sample_counts, defense, keys, 
     ids = client_ids or [f"client_{i}" for i in range(len(client_states))]
     rows = [{"client_id": ids[i], "prior_weight": float(prior[i]), "defended_weight": float(weights[i]),
              "update_norm": float(norms[i]), "norm_ratio_to_median": float(ratios[i]),
-             "clip_factor": float(factors[i]), "clipped": bool(norms[i] > C),
+             "clip_factor": float(factors[i]), "clipped": bool(factors[i] < 1.0),
              "cosine_to_median": float(cosines[i]), "flag_low_cosine": bool(low_cos[i]),
              "flag_high_norm": bool(high_norm[i]), "flagged": bool(flagged[i])}
             for i in range(len(client_states))]

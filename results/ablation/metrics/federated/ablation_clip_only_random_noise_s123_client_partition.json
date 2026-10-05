@@ -1,0 +1,169 @@
+{
+  "clients": [
+    {
+      "class_counts": {
+        "/": 3407,
+        "A": 306,
+        "F": 372,
+        "J": 1,
+        "N": 6082,
+        "Q": 20,
+        "R": 3418,
+        "S": 2,
+        "V": 1017,
+        "f": 722,
+        "j": 212
+      },
+      "client_id": "client_00",
+      "groups": [
+        "record_102",
+        "record_104",
+        "record_118",
+        "record_121",
+        "record_208",
+        "record_222",
+        "record_231"
+      ],
+      "records": [
+        "102",
+        "104",
+        "118",
+        "121",
+        "208",
+        "222",
+        "231"
+      ],
+      "segments": 15559
+    },
+    {
+      "class_counts": {
+        "A": 3,
+        "F": 3,
+        "L": 2491,
+        "N": 12625,
+        "Q": 4,
+        "V": 1112,
+        "a": 2
+      },
+      "client_id": "client_01",
+      "groups": [
+        "record_103",
+        "record_106",
+        "record_109",
+        "record_115",
+        "record_116",
+        "record_203",
+        "record_230"
+      ],
+      "records": [
+        "103",
+        "106",
+        "109",
+        "115",
+        "116",
+        "203",
+        "230"
+      ],
+      "segments": 16240
+    },
+    {
+      "class_counts": {
+        "A": 1482,
+        "E": 1,
+        "F": 22,
+        "J": 50,
+        "N": 13759,
+        "R": 2222,
+        "V": 432,
+        "a": 22,
+        "j": 1
+      },
+      "client_id": "client_02",
+      "groups": [
+        "record_205",
+        "record_210",
+        "record_212",
+        "record_215",
+        "record_220",
+        "record_232",
+        "record_234"
+      ],
+      "records": [
+        "205",
+        "210",
+        "212",
+        "215",
+        "220",
+        "232",
+        "234"
+      ],
+      "segments": 17991
+    },
+    {
+      "class_counts": {
+        "A": 498,
+        "E": 105,
+        "F": 2,
+        "L": 1457,
+        "N": 10055,
+        "R": 85,
+        "V": 485,
+        "j": 1
+      },
+      "client_id": "client_03",
+      "groups": [
+        "record_108",
+        "record_117",
+        "record_122",
+        "record_207",
+        "record_209",
+        "record_228"
+      ],
+      "records": [
+        "108",
+        "117",
+        "122",
+        "207",
+        "209",
+        "228"
+      ],
+      "segments": 12688
+    },
+    {
+      "class_counts": {
+        "A": 129,
+        "F": 383,
+        "J": 29,
+        "N": 10968,
+        "Q": 5,
+        "R": 1530,
+        "V": 2003,
+        "a": 4,
+        "e": 16,
+        "j": 5
+      },
+      "client_id": "client_04",
+      "groups": [
+        "record_105",
+        "record_124",
+        "record_200",
+        "record_213",
+        "record_221",
+        "record_223"
+      ],
+      "records": [
+        "105",
+        "124",
+        "200",
+        "213",
+        "221",
+        "223"
+      ],
+      "segments": 15072
+    }
+  ],
+  "min_client_segments": 1000,
+  "num_clients": 5,
+  "seed": 123,
+  "strategy": "random_group_equal_count"
+}

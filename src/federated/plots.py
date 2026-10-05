@@ -438,3 +438,40 @@ def plot_defense_weights(weights, path):
     fig.suptitle("Malicious client's weight before and after the proposed defense", fontsize=12, color=INK)
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+def plot_ablation(runs, order, labels, path):
+    """Rows: test macro-F1 and NaN-validation (breakdown) rounds; columns: conditions; x: ablation variants 1-6."""
+    conditions = [c for c in ["clean", "sign_flip", "scaled", "random_noise"] if c in set(runs["condition"])]
+    styles = _seed_style([int(s) for s in runs["seed"].unique()])
+    fig, axes = plt.subplots(2, len(conditions), figsize=(4.4 * len(conditions), 8), layout="constrained",
+                             squeeze=False, sharey="row")
+    rows = [("test_macro_f1", "Test macro-F1 (15 classes)"), ("nan_validation_rounds", "Rounds with NaN validation loss (of 20)")]
+    for r, (metric, ylabel) in enumerate(rows):
+        for c, condition in enumerate(conditions):
+            ax = axes[r][c]
+            _style(ax)
+            ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(len(order))))
+            subset = runs[runs["condition"] == condition]
+            for x, variant in enumerate(order):
+                group = subset[subset["variant"] == variant].sort_values("seed")
+                offsets = np.linspace(-0.15, 0.15, len(group)) if len(group) > 1 else [0.0]
+                for dx, (_, row) in zip(offsets, group.iterrows()):
+                    seed = int(row["seed"])
+                    color, marker = styles[seed]
+                    ax.plot(x + dx, row[metric], marker=marker, color=color, markersize=7, linestyle="none",
+                            label=f"seed {seed}" if (r == 0 and c == 0 and x == 0) else None)
+            ax.set_xticks(range(len(order)), [str(i + 1) for i in range(len(order))])
+            ax.set_xlim(-0.6, len(order) - 0.4)
+            if r == 0:
+                ax.set_title(condition.replace("_", " "), loc="left", fontsize=11, color=INK)
+            if c == 0:
+                ax.set_ylabel(ylabel, color=MUTED)
+            if r == 1:
+                ax.set_xlabel("Variant", color=MUTED)
+    axes[0][0].legend(fontsize=8, frameon=False)
+    legend = "   ".join(labels[v] for v in order)
+    fig.suptitle("Ablation of the proposed defense (frozen thresholds; test evaluated once per run)\n" + legend,
+                 fontsize=10, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

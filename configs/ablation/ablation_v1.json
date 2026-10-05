@@ -1,0 +1,34 @@
+{
+  "study_id": "proposed_defense_ablation_v1",
+  "description": "Component ablation of the frozen Day 18 defense. Thresholds are taken unchanged from configs/proposed/robust_defense_v1.json; only component switches differ. No retuning, no new attacks, same seeds, partition, budget and selection rule as Days 17-18.",
+  "frozen_defense_config": "configs/proposed/robust_defense_v1.json",
+  "attack_config": "configs/security/attacks_v1.json",
+  "seeds": [42, 123, 2024],
+  "conditions": ["clean", "sign_flip", "scaled", "random_noise"],
+  "variants": {
+    "plain_fedavg": {
+      "label": "1. Plain FedAvg",
+      "source": "existing",
+      "clean_run": "results/robustness/{metrics,tables}/federated/fedavg_v1_natural_s{seed}",
+      "attacked_run": "results/security/{metrics,tables}/federated/attack_{condition}_s{seed}"
+    },
+    "clip_only": {"label": "2. Clipping only", "source": "new",
+                  "components": {"clipping": true, "cosine_filter": false, "norm_filter": false, "robust_bn_stats": false}},
+    "clip_cos": {"label": "3. Clipping + cosine filter", "source": "new",
+                 "components": {"clipping": true, "cosine_filter": true, "norm_filter": false, "robust_bn_stats": false}},
+    "clip_norm": {"label": "4. Clipping + norm filter", "source": "new",
+                  "components": {"clipping": true, "cosine_filter": false, "norm_filter": true, "robust_bn_stats": false}},
+    "clip_cos_norm": {"label": "5. Clipping + cosine + norm filters", "source": "new",
+                      "components": {"clipping": true, "cosine_filter": true, "norm_filter": true, "robust_bn_stats": false}},
+    "full": {
+      "label": "6. Full method (+ separate BatchNorm median and variance floor)",
+      "source": "existing",
+      "run": "results/proposed/{metrics,tables}/federated/defended_{condition}_s{seed}",
+      "components": {"clipping": true, "cosine_filter": true, "norm_filter": true, "robust_bn_stats": true}
+    }
+  },
+  "bn_without_robust_stats": "Running mean/var aggregated as the weighted mean over accepted clients with the same weights as the parameters (FedAvg treatment of buffers); no median, no variance floor.",
+  "reuse_note": "Variants 1 and 6 reuse the frozen Day 11/17 and Day 18 runs (same seeds, attacker draws, budget and code path); the default-component code path was verified bit-identical to Day 18.",
+  "run_id_template": "ablation_{variant}_{condition}_s{seed}",
+  "output_root": "results/ablation"
+}

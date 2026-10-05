@@ -673,3 +673,56 @@ The proposed aggregation neutralises the two damaging Day 17 attacks with perfec
 - Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
 
 No DP, HE, blockchain, or additional attacks were added in Day 18. Nothing was committed or pushed.
+
+
+# Day 19 — Ablation of the proposed defense
+
+**Date:** 2026-10-05
+
+## Purpose
+
+Attribute the Day 18 results to individual components of the **frozen** defense: same thresholds (C = 2.603, τ_cos = 0.1814, τ_norm = 2.0), seeds, attacks, partition, budget, and selection rule, with no retuning. Full report: `docs/ablation.md`. Outputs: `results/ablation/`.
+
+## Design
+
+- **Variants:**
+  1. Plain FedAvg (reused from Days 11 and 17).
+  2. Clipping only.
+  3. Clipping + cosine filter.
+  4. Clipping + norm filter.
+  5. Clipping + cosine + norm filters.
+  6. Full method, adding the BatchNorm median and variance floor (reused from Day 18).
+- **New runs:** 48 (variants 2–5 × 4 conditions × 3 seeds).
+- **Switches:** boolean component switches were added to `proposed_defense.py`. The defaults equal the full method, and a re-run reproduced Day 18 bit-identically.
+- **BatchNorm without the robust component:** weighted mean over accepted clients, with no median and no floor.
+- **Tests:** 7 new (105 in total).
+
+## Results (mean test macro-F1 over 3 seeds; breakdown = NaN or negative-variance rounds out of 20)
+
+| Variant | Clean | Sign flip | Scaled ×10 | Noise |
+|---|---|---|---|---|
+| 1. Plain FedAvg | 0.085 | 0.082 (breaks 7–15 rounds) | 0.038 (breaks 10–17) | 0.088 |
+| 2. Clipping only | 0.080 | 0.083 (breaks 7–15) | 0.053 (breaks 10–17) | 0.086 |
+| 3. + cosine | 0.080 | **0.085, no breakdown** | 0.053 (breaks 10–17) | 0.086 |
+| 4. + norm | 0.080 | 0.083 (breaks 7–15) | **0.085, no breakdown** | 0.086 |
+| 5. + cosine + norm | 0.080 | **0.085** | **0.085** | 0.086 |
+| 6. Full | 0.070 | 0.069 | 0.069 | 0.075 |
+
+- **Detection:** 100% for sign flip with the cosine filter and for scaling with the norm filter. 0% / 1.7% cross-detection. 0 honest false positives in every variant.
+- **Overhead:** 3.2–3.9 ms per round for all defended variants.
+
+## Attribution
+
+- **Sign-flip failure** is prevented by the **cosine filter**.
+- **×10 scaling failure** is prevented by the **norm filter**. Clipping alone does not prevent it, because the breakdown travels through the attacker's unclipped BatchNorm running statistics. Only excluding the attacker stops it.
+- **Clean degradation** comes mainly from the **separate BatchNorm median** (0.080 → 0.070, driven by seed 123: 0.089 → 0.059), with a small contribution from **clipping** (0.085 → 0.080).
+- **BatchNorm stability** comes from **attacker filtering**. Variant 5 had 0 negative-variance rounds without the median or floor, and the full method never applied its floor.
+- **Overall:** variant 5 matched or exceeded the full method in every condition. The BatchNorm component of v1 is not supported by this ablation. This is descriptive, on 3 seeds, with no significance claim.
+
+## Unresolved questions
+
+- A predeclared v2 (cosine + norm filters with FedAvg-style statistics over accepted clients, optional floor, leave-one-out median reference), evaluated on fresh seeds rather than chosen from these results.
+- Whether the BatchNorm median helps against adaptive attacks on running statistics alone, which were not tested.
+- Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, taxonomy, and DP/HE compatibility of the defense.
+
+No new attacks, tuning, defense, or DP/HE/blockchain integration were added in Day 19. Nothing was committed or pushed.
