@@ -122,3 +122,69 @@ def plot_confusion_matrix(cm, class_names, title, path):
                     color="white" if cm[r, c] > threshold else "black", fontsize=7)
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+SEED_STYLES = [("#2a78d6", "o"), ("#eb6834", "s"), ("#1baf7a", "^")]  # colour + marker per seed
+
+
+def _seed_style(seeds):
+    return {seed: SEED_STYLES[i % len(SEED_STYLES)] for i, seed in enumerate(sorted(seeds))}
+
+
+def plot_robustness_convergence(history, reference, path):
+    """Rows: partitions; columns: validation loss, macro-F1, accuracy; one line per seed."""
+    partitions = list(dict.fromkeys(history["partition"]))
+    styles = _seed_style(history["seed"].unique())
+    columns = [("validation_loss", "Validation loss"), ("validation_macro_f1", "Validation macro-F1 (15 classes)"),
+               ("validation_accuracy", "Validation accuracy")]
+    fig, axes = plt.subplots(len(partitions), 3, figsize=(15, 4.2 * len(partitions)), layout="constrained",
+                             squeeze=False, sharey="col")
+    for r, partition in enumerate(partitions):
+        subset = history[history["partition"] == partition]
+        for c, (key, title) in enumerate(columns):
+            ax = axes[r][c]
+            _style(ax)
+            for seed, run in subset.groupby("seed"):
+                color, marker = styles[seed]
+                ax.plot(run["round"], run[key], color=color, marker=marker, markersize=4, linewidth=2,
+                        label=f"seed {seed}")
+                best = run.loc[run["validation_loss"].idxmin()]
+                ax.plot(best["round"], best[key], marker=marker, markersize=10, markerfacecolor="none",
+                        markeredgecolor=color, markeredgewidth=1.5, linestyle="none")
+            ax.axhline(reference[key], color=MUTED, linewidth=1.5, linestyle="--",
+                       label="Centralized checkpoint (epoch 1)")
+            ax.set_title(f"{partition} partition — {title}", loc="left", fontsize=10, color=INK)
+            ax.set_xlabel("Communication round", color=MUTED)
+            if r == 0 and c == 0:
+                ax.legend(fontsize=8, frameon=False)
+    fig.suptitle("FedAvg robustness: validation metrics by round (open marker = round selected by minimum "
+                 "validation loss)", fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def plot_robustness_test_metrics(runs, reference, path):
+    """One dot per run for test accuracy, macro-F1 and weighted-F1, with the centralized value dashed."""
+    partitions = list(dict.fromkeys(runs["partition"]))
+    styles = _seed_style(runs["seed"].unique())
+    panels = [("test_accuracy", "Test accuracy"), ("test_macro_f1", "Test macro-F1 (15 classes)"),
+              ("test_weighted_f1", "Test weighted-F1")]
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.5), layout="constrained")
+    for ax, (key, title) in zip(axes, panels):
+        _style(ax)
+        ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(len(partitions))))
+        for x, partition in enumerate(partitions):
+            subset = runs[runs["partition"] == partition].sort_values("seed")
+            offsets = np.linspace(-0.12, 0.12, len(subset)) if len(subset) > 1 else [0.0]
+            for dx, (_, row) in zip(offsets, subset.iterrows()):
+                color, marker = styles[row["seed"]]
+                ax.plot(x + dx, row[key], marker=marker, markersize=9, color=color, linestyle="none",
+                        label=f"seed {row['seed']}" if x == 0 else None)
+        ax.axhline(reference[key], color=MUTED, linewidth=1.5, linestyle="--", label="centralized_cnn_v1")
+        ax.set_xticks(range(len(partitions)), [f"{p}\npartition" for p in partitions])
+        ax.set_xlim(-0.6, len(partitions) - 0.4)
+        ax.set_title(title, loc="left", fontsize=11, color=INK)
+    axes[0].legend(fontsize=8, frameon=False)
+    fig.suptitle("Held-out test metrics per FedAvg robustness run (each evaluated once)", fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

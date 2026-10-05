@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-SUPPORTED_STRATEGIES = {"random_group_equal_count"}
+SUPPORTED_STRATEGIES = {"random_group_equal_count", "controlled_group_partition"}
 
 
 def load_federated_config(path):

@@ -281,3 +281,47 @@ This is a simulation on one public database; the clients are not hospitals. Ther
 - The taxonomy questions from Day 8 remain open.
 
 No privacy, encryption, blockchain, attack, or proposed-algorithm code was implemented. The work was committed locally after validation; nothing was pushed.
+
+
+# Day 11 — FedAvg robustness and experimental control
+
+**Date:** 2026-10-05
+
+## Purpose
+
+Test whether the Day 10 FedAvg degradation and collapse to `N`/`V` are reproducible across predefined seeds and group partitions, with the `fedavg_v1` configuration held fixed. The goal is reproducibility, not optimizing FedAvg. The official Day 10 run is preserved unchanged as `fedavg_v1_official`. All robustness outputs are under `results/robustness/`. Full report: `docs/fedavg_robustness.md`.
+
+## Design
+
+- **Seeds:** 42, 123, and 2024, fixed in advance. Each seed sets both the training seed and the partition seed.
+- **Partitions:** 5 clients from whole training groups.
+  - Primary: the natural `random_group_equal_count` partition.
+  - Diagnostic: `controlled_group_partition`, which visits groups rarest content first and assigns each to the client lacking most of its classes. It uses training labels only and does no balancing.
+- **Runs:** 6 in total. Each selects its round on validation loss and evaluates the test set once. Training settings are unchanged: 20 rounds, 1 local epoch, Adam with lr 0.001, batch size 256, full participation, and sample-weighted FedAvg.
+- **Pre-training finding:** `/` and `L` each occur in only 2 training groups, so no whole-group partition can place them on more than 2 of 5 clients. The controlled partition reaches the minimum feasible number of client-class absences (25–26, against 29–30 for natural partitions) but cannot change the skew of `/` and `L`.
+
+## Results
+
+- `fedavg_v1_natural_s42` reproduced the official model and test predictions **bit-identically**.
+- **Test macro-F1:** natural 0.0851 ± 0.0134 (range 0.0717–0.0986); controlled 0.0816 ± 0.0031. Centralized: 0.1399.
+- **Test accuracy:** natural 0.6567 ± 0.0762; controlled 0.6600 ± 0.0358. Centralized: 0.7688.
+- **Test weighted-F1:** natural 0.6021 ± 0.0489; controlled 0.6060 ± 0.0155. Centralized: 0.7208.
+- These are means ± sample SD over 3 runs each. They are descriptive only, with no significance test.
+- **Degradation is stable:** all 6 runs are below the centralized baseline on accuracy, macro-F1, weighted-F1, and macro recall.
+- **N/V collapse is effectively reproducible:** at least 99.0% of test predictions are `N` or `V` in every run. The strictly two-class form occurs only in the official seed-42 run; other runs add a few spurious `R` predictions (no `R` in test). One run (natural s2024) predicts `/` once, correctly, and `L` twice, both wrongly. Across all runs, 1 of 2,078 paced beats and 0 of 2,001 `L` beats are detected. Paced `/` F1 is about 0 in every run, against 0.669 centralized.
+- Macro AUROC is above centralized in 4 of 6 runs, which again reflects score ranking rather than decisions.
+- The selected round varies widely (2, 2, 3, 15, 17, 20), and validation macro-F1 never exceeds 0.10.
+- The controlled partition narrowed the spread of test macro-F1 but did not change its level or prevent the collapse.
+
+## Unresolved questions
+
+- Is losing `/` and `L` caused by their 2-record confinement (label skew), or by FedAvg mechanics such as client drift, Adam reset, or BatchNorm averaging? The partition control could not separate these. Candidate one-factor experiments: keep BatchNorm statistics local (FedBN-style), use SGD or keep optimizer state across rounds, vary local epochs, and as a diagnostic only, an oracle partition that splits records within the training set.
+- How variable is the centralized baseline across seeds? Only FedAvg variability has been measured.
+- Is minimum validation loss an appropriate selection criterion when it diverges from validation macro-F1? Any change must be predeclared and applied to both baselines.
+- Day 8 taxonomy questions remain open.
+
+## Finalization
+
+In `docs/fedavg_robustness.md`, three over-broad statements were corrected against the saved tables: the gap-versus-spread comparison, the `/`/`L` detection counts, and the description of the convergence shapes. The robustness runs had overwritten each other's centralized-vs-FedAvg comparison tables because they shared one unprefixed file name. These were rebuilt per run by post-processing the saved test outputs, and the misleading leftover pair was removed; no experiment was re-run. Per-run robustness checkpoints and `.npz` prediction files were added to `.gitignore` as regenerable. The configuration, code, tests, summary tables, and figures stay tracked.
+
+No privacy, encryption, blockchain, attack, or proposed-algorithm code was implemented. Nothing was committed or pushed.

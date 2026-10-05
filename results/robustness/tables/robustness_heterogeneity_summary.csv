@@ -1,0 +1,7 @@
+run_id,partition,seed,client_class_absences,classes_on_all_clients,classes_on_one_client,mean_js_divergence_vs_pooled_bits,mean_pairwise_js_divergence_bits,max_pairwise_js_divergence_bits,client_segments_min,client_segments_max,client_segments_cv,clients_with_/,clients_with_A,clients_with_E,clients_with_F,clients_with_J,clients_with_L,clients_with_N,clients_with_Q,clients_with_R,clients_with_S,clients_with_V,clients_with_a,clients_with_e,clients_with_f,clients_with_j
+fedavg_v1_natural_s42,natural,42,30,4,2,0.08287079246221582,0.16664701453719696,0.30146811134521834,11937,18698,0.15062055060091556,2,5,2,5,3,2,5,3,4,1,5,2,1,2,3
+fedavg_v1_natural_s123,natural,123,30,4,4,0.09661513570745077,0.18819011101655744,0.39392997634452154,12688,17991,0.11109914256326434,1,5,2,5,3,2,5,3,4,1,5,3,1,1,4
+fedavg_v1_natural_s2024,natural,2024,29,4,2,0.08805111840788069,0.1788902633164423,0.31517384282832006,14012,18076,0.10984743163326159,2,5,2,5,3,2,5,3,4,1,5,3,1,2,3
+fedavg_v1_controlled_s42,controlled,42,25,5,2,0.07937660378479275,0.16086586801023564,0.2691728177384798,15055,15781,0.017721045485373416,2,5,2,5,3,2,5,4,5,1,5,4,1,2,4
+fedavg_v1_controlled_s123,controlled,123,26,5,2,0.07734719299546415,0.15973019468068372,0.27667403323584566,14659,16770,0.05036036360153909,2,5,2,5,3,2,5,3,5,1,5,4,1,2,4
+fedavg_v1_controlled_s2024,controlled,2024,25,5,2,0.07311689005182438,0.14707556774791128,0.2553961221394705,14815,16248,0.03832475985352535,2,5,2,5,3,2,5,4,5,1,5,4,1,2,4

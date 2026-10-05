@@ -1,0 +1,121 @@
+{
+  "centralized_validation_reference_epoch1": {
+    "validation_accuracy": 0.6853403461561984,
+    "validation_macro_f1": 0.1737207554842273
+  },
+  "client_segments": [
+    14025,
+    17021,
+    18076,
+    14416,
+    14012
+  ],
+  "config": {
+    "aggregation": {
+      "method": "FedAvg",
+      "weighting": "client_training_samples"
+    },
+    "data": {
+      "label_config": "configs/preprocessing/mitbih_v1.json",
+      "split_root": "data/splits/mitbih_v1"
+    },
+    "experiment_id": "fedavg_v1_natural_s2024",
+    "model": {
+      "architecture": "centralized_cnn_v1",
+      "class": "src.models.cnn1d.ECG1DCNN",
+      "dropout": 0.3
+    },
+    "model_selection": {
+      "metric": "validation_loss",
+      "mode": "min",
+      "split": "validation"
+    },
+    "output_root": "results",
+    "participation": {
+      "fraction": 1.0
+    },
+    "partition": {
+      "min_client_segments": 1000,
+      "num_clients": 5,
+      "seed": 2024,
+      "strategy": "random_group_equal_count"
+    },
+    "random_seed": 2024,
+    "runtime": {
+      "cpu_threads": 8,
+      "device": "cpu",
+      "evaluation_batch_size": 512,
+      "num_workers": 0
+    },
+    "training": {
+      "batch_size": 256,
+      "client_optimizer_state": "reset_each_round",
+      "learning_rate": 0.001,
+      "local_epochs": 1,
+      "loss": "CrossEntropyLoss",
+      "optimizer": "Adam",
+      "rounds": 20,
+      "shuffle_training": true
+    }
+  },
+  "experiment_id": "fedavg_v1_natural_s2024",
+  "final_round_validation": {
+    "client_train_accuracy_weighted": 0.9551515151515151,
+    "client_train_loss_weighted": 0.17738105210813684,
+    "elapsed_seconds": 112.3299076000003,
+    "participants": 5,
+    "round": 20,
+    "validation_accuracy": 0.7082135649195768,
+    "validation_loss": 1.335401430515534,
+    "validation_macro_f1": 0.09069697895309285,
+    "validation_macro_precision": 0.07603796377802684,
+    "validation_macro_recall": 0.1295477765143761,
+    "validation_weighted_f1": 0.6362882019932746
+  },
+  "model_path": "results/robustness/models/federated/fedavg_v1_natural_s2024_global.pt",
+  "num_clients": 5,
+  "rounds": 20,
+  "selected_round_by_validation_loss": 17,
+  "selected_round_validation": {
+    "client_train_accuracy_weighted": 0.9532172791747259,
+    "client_train_loss_weighted": 0.18500326443514,
+    "elapsed_seconds": 95.73112180000044,
+    "participants": 5,
+    "round": 17,
+    "validation_accuracy": 0.7124334903064032,
+    "validation_loss": 1.2538039326033499,
+    "validation_macro_f1": 0.09134566095038779,
+    "validation_macro_precision": 0.07641341798753731,
+    "validation_macro_recall": 0.12974109724071722,
+    "validation_weighted_f1": 0.6379720653875266
+  },
+  "software": {
+    "numpy": "2.5.3",
+    "torch": "2.14.1+cpu"
+  },
+  "test_evaluated": true,
+  "test_metrics": {
+    "accuracy": 0.5689954367247252,
+    "auroc_defined_class_count": 8,
+    "class_count": 15,
+    "macro_auroc_ovr_defined_classes": 0.6225864596896373,
+    "macro_f1": 0.07174806855557345,
+    "macro_precision": 0.13639691813515117,
+    "macro_recall_all_15_labels_zero_for_no_support": 0.10524989723332892,
+    "macro_sensitivity_supported_classes": 0.1973435573124917,
+    "macro_specificity_all_classes": 0.9622719588252892,
+    "micro_auroc_ovr_flattened": 0.9445315088113059,
+    "micro_f1": 0.5689954367247252,
+    "micro_precision": 0.5689954367247252,
+    "micro_recall": 0.5689954367247252,
+    "weighted_auroc_ovr_defined_classes": 0.8652049888742108,
+    "weighted_f1": 0.5647537486600275,
+    "weighted_precision": 0.7366065392867803,
+    "weighted_recall": 0.5689954367247252,
+    "weighted_sensitivity": 0.5689954367247252,
+    "weighted_specificity": 0.8650839456546126
+  },
+  "trainable_parameters": 10127,
+  "training_elapsed_seconds": 112.65600989999984,
+  "validation_segments": 16351
+}

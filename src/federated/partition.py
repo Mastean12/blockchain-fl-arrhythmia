@@ -73,11 +73,48 @@ def assign_groups_to_clients(group_ids, num_clients, seed, strategy="random_grou
     return [sorted(ordered[i] for i in chunk) for chunk in chunks]
 
 
+def assign_groups_coverage_greedy(groups, num_clients, seed):
+    """Diagnostic `controlled_group_partition`: whole groups, fewer client class absences.
+
+    Uses only training-group label counts. Groups are visited from the rarest
+    content first (sort key: the smallest number of training groups that contain
+    any of the group's classes; ties broken by a seeded random rank). Each group
+    goes to the client, among those still below ceil(G / K) groups, that lacks the
+    most of the group's classes; ties go to the client with fewer groups, then
+    fewer segments, then the lower index. No samples are moved, duplicated, or
+    re-weighted, and per-client class proportions are not equalised.
+    """
+    ordered = sorted(groups)
+    if not 1 <= num_clients <= len(ordered):
+        raise ValueError("num_clients must be between 1 and the number of training groups")
+    groups_with_class = {}
+    for g in ordered:
+        for label in groups[g]["class_counts"]:
+            groups_with_class[label] = groups_with_class.get(label, 0) + 1
+    rank = {g: int(r) for g, r in zip(ordered, np.random.default_rng(seed).permutation(len(ordered)))}
+    visit = sorted(ordered, key=lambda g: (min(groups_with_class[c] for c in groups[g]["class_counts"]), rank[g]))
+    capacity = -(-len(ordered) // num_clients)
+    assigned = [[] for _ in range(num_clients)]
+    classes = [set() for _ in range(num_clients)]
+    segments = [0] * num_clients
+    for g in visit:
+        present = set(groups[g]["class_counts"])
+        open_clients = [k for k in range(num_clients) if len(assigned[k]) < capacity]
+        best = min(open_clients, key=lambda k: (-len(present - classes[k]), len(assigned[k]), segments[k], k))
+        assigned[best].append(g)
+        classes[best] |= present
+        segments[best] += groups[g]["segments"]
+    return [sorted(a) for a in assigned]
+
+
 def build_client_partition(split_root, num_clients, seed, strategy="random_group_equal_count",
                            min_client_segments=1):
     """Build and validate the client partition from the training split."""
     groups = discover_training_groups(split_root)
-    assignment = assign_groups_to_clients(list(groups), num_clients, seed, strategy)
+    if strategy == "controlled_group_partition":
+        assignment = assign_groups_coverage_greedy(groups, num_clients, seed)
+    else:
+        assignment = assign_groups_to_clients(list(groups), num_clients, seed, strategy)
     clients = []
     for index, client_groups in enumerate(assignment):
         counts = Counter()

@@ -47,6 +47,17 @@ def _write_json(path, obj):
     Path(path).write_text(json.dumps(obj, indent=2, sort_keys=True, default=float) + "\n", encoding="utf-8")
 
 
+def apply_overrides(config, overrides):
+    """Merge `{section: {key: value}}` or `{key: value}` overrides into a copy of the config."""
+    config = copy.deepcopy(config)
+    for section, values in (overrides or {}).items():
+        if isinstance(values, dict):
+            config[section].update(values)
+        else:
+            config[section] = values
+    return config
+
+
 def prepare_partition(config, output_root=None, write=True):
     """Build the client partition and (optionally) write the distribution report."""
     part = config["partition"]
@@ -70,13 +81,8 @@ def prepare_partition(config, output_root=None, write=True):
 
 
 def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_test=True, output_root=None,
-                   overrides=None, overwrite=False, log=print):
-    config = load_federated_config(config_path)
-    for section, values in (overrides or {}).items():
-        if isinstance(values, dict):
-            config[section].update(values)
-        else:
-            config[section] = values
+                   overrides=None, overwrite=False, log=print, comparison_prefix=""):
+    config = apply_overrides(load_federated_config(config_path), overrides)
     root = Path(output_root or config["output_root"])
     exp = config["experiment_id"]
     model_dir = root / "models" / "federated"
@@ -183,9 +189,9 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         plots.plot_confusion_matrix(result["confusion_matrix"], class_names,
                                     f"FedAvg global model (round {best['round']}) — held-out test confusion matrix",
                                     figures_dir / f"{exp}_confusion_matrix.png")
-        aggregate_rows, per_class_rows = compare_with_centralized(result["aggregate"], result["per_class"])
-        _write_csv(tables_dir / "centralized_vs_fedavg_aggregate.csv", aggregate_rows)
-        _write_csv(tables_dir / "centralized_vs_fedavg_per_class.csv", per_class_rows)
+        aggregate_rows, per_class_rows = compare_with_centralized(result["aggregate"], result["per_class"], label=exp)
+        _write_csv(tables_dir / f"{comparison_prefix}centralized_vs_fedavg_aggregate.csv", aggregate_rows)
+        _write_csv(tables_dir / f"{comparison_prefix}centralized_vs_fedavg_per_class.csv", per_class_rows)
         run_summary.update({"test_evaluated": True, "test_metrics": test_summary["metrics"]})
     _write_json(metrics_dir / f"{exp}_run_summary.json", run_summary)
     return run_summary

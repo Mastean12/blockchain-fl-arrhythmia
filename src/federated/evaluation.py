@@ -146,7 +146,8 @@ def _verdict(delta, higher_is_better=True):
 
 def compare_with_centralized(fedavg_aggregate, fedavg_per_class,
                              baseline_metrics_path="results/metrics/baseline_metrics.json",
-                             baseline_per_class_path="results/tables/baseline_per_class_metrics.csv"):
+                             baseline_per_class_path="results/tables/baseline_per_class_metrics.csv",
+                             label="fedavg_v1"):
     """Read the frozen centralized artifacts (read-only) and build comparison tables."""
     central = json.loads(Path(baseline_metrics_path).read_text(encoding="utf-8"))["metrics"]
     keys = ["accuracy", "macro_precision", "macro_recall_all_15_labels_zero_for_no_support",
@@ -157,7 +158,7 @@ def compare_with_centralized(fedavg_aggregate, fedavg_per_class,
     for key in keys:
         c, f = central.get(key), fedavg_aggregate.get(key)
         delta = None if c is None or f is None else f - c
-        aggregate_rows.append({"metric": key, "centralized_cnn_v1": c, "fedavg_v1": f, "delta_fedavg_minus_central": delta,
+        aggregate_rows.append({"metric": key, "centralized_cnn_v1": c, label: f, "delta_fedavg_minus_central": delta,
                                "verdict": _verdict(delta)})
     central_pc = pd.read_csv(baseline_per_class_path, keep_default_na=False, na_values=[""])
     central_pc = central_pc.set_index("label")

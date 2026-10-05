@@ -1,0 +1,14 @@
+{
+  "robustness_id": "fedavg_v1_robustness",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [42, 123, 2024],
+  "seed_controls": ["random_seed", "partition.seed"],
+  "primary_partition": "random_group_equal_count",
+  "diagnostic_partitions": ["controlled_group_partition"],
+  "run_id_template": "fedavg_v1_{partition_label}_s{seed}",
+  "partition_labels": {
+    "random_group_equal_count": "natural",
+    "controlled_group_partition": "controlled"
+  },
+  "output_root": "results/robustness"
+}
