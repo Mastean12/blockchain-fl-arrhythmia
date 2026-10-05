@@ -1,0 +1,250 @@
+{
+  "config": {
+    "ledger_id": "fl_round_ledger_v1",
+    "description": "Isolated single-node, append-only, SHA-256 hash-chained ledger of FL round metadata. Not integrated with FL training. Stores hashes and small metadata only; never ECG data, model parameters, or (encrypted) updates.",
+    "hash_algorithm": "sha256",
+    "canonical_encoding": "UTF-8 JSON, keys sorted, separators (',', ':'), ensure_ascii=true, no NaN/Infinity",
+    "block_fields": [
+      "index",
+      "previous_hash",
+      "timestamp",
+      "round",
+      "experiment_id",
+      "participants",
+      "aggregation_hash",
+      "metadata",
+      "block_hash"
+    ],
+    "participant_fields": [
+      "client_id",
+      "num_samples",
+      "update_hash"
+    ],
+    "genesis_previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "limits": {
+      "max_block_bytes": 16384,
+      "max_participants": 1000,
+      "max_metadata_value_chars": 256,
+      "max_client_id_chars": 64
+    },
+    "benchmark": {
+      "seed": 42,
+      "clients_per_round": 5,
+      "chain_lengths": [
+        20,
+        100,
+        1000,
+        10000
+      ],
+      "repeats": 5,
+      "payload_bytes": {
+        "plaintext_model_update_day10": 41428,
+        "he_ciphertext_update_day14": 994171
+      },
+      "hash_repeats": 200,
+      "tamper_chain_length": 21,
+      "tamper_trials_per_scenario": 200
+    },
+    "output_root": "results/blockchain"
+  },
+  "seed": 42,
+  "hashing_overhead": [
+    {
+      "payload": "plaintext_model_update_day10",
+      "payload_bytes": 41428,
+      "seconds_per_hash": 1.884549999886076e-05,
+      "throughput_MB_per_s": 2198.29667573184,
+      "seconds_per_round_5_clients_plus_aggregate": 0.00011307299999316456
+    },
+    {
+      "payload": "he_ciphertext_update_day14",
+      "payload_bytes": 994171,
+      "seconds_per_hash": 0.0004354010000042763,
+      "throughput_MB_per_s": 2283.345697392141,
+      "seconds_per_round_5_clients_plus_aggregate": 0.0026124060000256577
+    }
+  ],
+  "block_hashing_share": {
+    "blocks": 1001,
+    "sha256_seconds": 0.0009300000001530861,
+    "canonical_encoding_seconds": 0.016558200000872603,
+    "sha256_us_per_block": 0.9290709292238623,
+    "encoding_us_per_block": 16.541658342530074
+  },
+  "scaling": [
+    {
+      "chain_length_blocks": 20,
+      "round_blocks": 19,
+      "clients_per_block": 5,
+      "create_seconds_total": 0.0012478999997256324,
+      "create_ms_per_block": 0.06239499998628162,
+      "validate_seconds_total": 0.0008670999995956663,
+      "validate_ms_per_block": 0.043354999979783315,
+      "validate_with_anchor_seconds": 0.000866999998834217,
+      "save_seconds": 0.0016937000000325497,
+      "load_seconds": 0.0002562000008765608,
+      "file_bytes": 20845,
+      "file_bytes_per_block": 1042.25,
+      "round_block_canonical_bytes_mean": 1062.0526315789473
+    },
+    {
+      "chain_length_blocks": 100,
+      "round_blocks": 99,
+      "clients_per_block": 5,
+      "create_seconds_total": 0.006900899999891408,
+      "create_ms_per_block": 0.06900899999891408,
+      "validate_seconds_total": 0.004492500000196742,
+      "validate_ms_per_block": 0.04492500000196742,
+      "validate_with_anchor_seconds": 0.004512800000156858,
+      "save_seconds": 0.003159300000334042,
+      "load_seconds": 0.0008527999998477753,
+      "file_bytes": 105965,
+      "file_bytes_per_block": 1059.65,
+      "round_block_canonical_bytes_mean": 1062.8181818181818
+    },
+    {
+      "chain_length_blocks": 1000,
+      "round_blocks": 999,
+      "clients_per_block": 5,
+      "create_seconds_total": 0.0654091000014887,
+      "create_ms_per_block": 0.0654091000014887,
+      "validate_seconds_total": 0.045427299999573734,
+      "validate_ms_per_block": 0.045427299999573734,
+      "validate_with_anchor_seconds": 0.04550810000000638,
+      "save_seconds": 0.021962599999824306,
+      "load_seconds": 0.009511599999314058,
+      "file_bytes": 1065365,
+      "file_bytes_per_block": 1065.365,
+      "round_block_canonical_bytes_mean": 1064.7837837837837
+    },
+    {
+      "chain_length_blocks": 10000,
+      "round_blocks": 9999,
+      "clients_per_block": 5,
+      "create_seconds_total": 0.6662488000001758,
+      "create_ms_per_block": 0.06662488000001758,
+      "validate_seconds_total": 0.44814060000135214,
+      "validate_ms_per_block": 0.044814060000135214,
+      "validate_with_anchor_seconds": 0.4511958999992203,
+      "save_seconds": 0.19051870000112103,
+      "load_seconds": 0.11592770000061137,
+      "file_bytes": 10677365,
+      "file_bytes_per_block": 1067.7365,
+      "round_block_canonical_bytes_mean": 1066.7785778577859
+    }
+  ],
+  "tamper_detection": [
+    {
+      "scenario": "edit_update_hash",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "edit_update_hash_and_rehash_block",
+      "trials": 200,
+      "detected_internal": 187,
+      "detected_with_anchor": 200,
+      "internal_rate": 0.935,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "edit_num_samples",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "remove_participant_record",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "edit_aggregation_hash",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "edit_timestamp",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "edit_round_number",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "delete_block",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "swap_adjacent_blocks",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "insert_forged_block",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "full_rewrite_with_recomputed_hashes",
+      "trials": 200,
+      "detected_internal": 0,
+      "detected_with_anchor": 200,
+      "internal_rate": 0.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "truncate_newest_blocks",
+      "trials": 200,
+      "detected_internal": 0,
+      "detected_with_anchor": 200,
+      "internal_rate": 0.0,
+      "anchored_rate": 1.0
+    },
+    {
+      "scenario": "file_byte_flip_on_disk",
+      "trials": 200,
+      "detected_internal": 200,
+      "detected_with_anchor": 200,
+      "internal_rate": 1.0,
+      "anchored_rate": 1.0
+    }
+  ],
+  "example_ledger": {
+    "path": "results/blockchain/ledgers/example_20_rounds.jsonl",
+    "bytes": 21909,
+    "ledger_id": "fl_round_ledger_v1",
+    "length": 21,
+    "tip_hash": "e837cccb42fa26c986b35a9d901b77bf84377533b278f161e32798d80f2641fe"
+  },
+  "timing_note": "Median wall-clock over repeats on one machine; load not controlled."
+}

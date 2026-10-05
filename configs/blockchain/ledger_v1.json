@@ -1,0 +1,29 @@
+{
+  "ledger_id": "fl_round_ledger_v1",
+  "description": "Isolated single-node, append-only, SHA-256 hash-chained ledger of FL round metadata. Not integrated with FL training. Stores hashes and small metadata only; never ECG data, model parameters, or (encrypted) updates.",
+  "hash_algorithm": "sha256",
+  "canonical_encoding": "UTF-8 JSON, keys sorted, separators (',', ':'), ensure_ascii=true, no NaN/Infinity",
+  "block_fields": ["index", "previous_hash", "timestamp", "round", "experiment_id", "participants", "aggregation_hash", "metadata", "block_hash"],
+  "participant_fields": ["client_id", "num_samples", "update_hash"],
+  "genesis_previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "limits": {
+    "max_block_bytes": 16384,
+    "max_participants": 1000,
+    "max_metadata_value_chars": 256,
+    "max_client_id_chars": 64
+  },
+  "benchmark": {
+    "seed": 42,
+    "clients_per_round": 5,
+    "chain_lengths": [20, 100, 1000, 10000],
+    "repeats": 5,
+    "payload_bytes": {
+      "plaintext_model_update_day10": 41428,
+      "he_ciphertext_update_day14": 994171
+    },
+    "hash_repeats": 200,
+    "tamper_chain_length": 21,
+    "tamper_trials_per_scenario": 200
+  },
+  "output_root": "results/blockchain"
+}

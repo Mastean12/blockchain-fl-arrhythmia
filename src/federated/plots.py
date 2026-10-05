@@ -258,3 +258,34 @@ def plot_he_error(rounds, path):
     ax.legend(fontsize=8, frameon=False, ncol=3)
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+def plot_ledger_scaling(scaling, path):
+    """Block creation and validation time vs chain length (log-log), plus storage per block."""
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.6), layout="constrained")
+    ax = axes[0]
+    _style(ax)
+    ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator())
+    ax.plot(scaling["chain_length_blocks"], scaling["create_seconds_total"], color=FEDAVG_COLOR, marker="o",
+            markersize=6, linewidth=2, label="create chain (all blocks)")
+    ax.plot(scaling["chain_length_blocks"], scaling["validate_seconds_total"], color=REFERENCE_COLOR, marker="s",
+            markersize=6, linewidth=2, label="validate chain (all blocks)")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Chain length (blocks; 5 client records per round block)", color=MUTED)
+    ax.set_ylabel("Seconds (median)", color=MUTED)
+    ax.set_title("Ledger creation and validation time", loc="left", fontsize=11, color=INK)
+    ax.legend(fontsize=8, frameon=False)
+    ax = axes[1]
+    _style(ax)
+    ax.plot(scaling["chain_length_blocks"], scaling["file_bytes"] / 1e6, color=FEDAVG_COLOR, marker="o",
+            markersize=6, linewidth=2, label="ledger file size")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Chain length (blocks)", color=MUTED)
+    ax.set_ylabel("MB on disk (JSON Lines)", color=MUTED)
+    per_block = scaling["file_bytes_per_block"].iloc[-1]
+    ax.set_title(f"Ledger storage (about {per_block:,.0f} bytes per block)", loc="left", fontsize=11, color=INK)
+    ax.legend(fontsize=8, frameon=False)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

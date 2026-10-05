@@ -486,3 +486,44 @@ HE-FedAvg preserves FedAvg utility to within CKKS precision, at about 20× the c
 - Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
 
 No DP, blockchain, attack, or proposed-algorithm code was implemented in Day 14. Nothing was committed or pushed.
+
+
+# Day 15 — Blockchain component (isolated hash-chained ledger)
+
+**Date:** 2026-10-05
+
+## Purpose
+
+Build an isolated, lightweight local ledger for FL round metadata: round and timestamp, client participation and update hashes, aggregation hash, hash verification, and tamper detection. It is not integrated with FL and not combined with DP, HE, attacks, or the proposed algorithm. Full report: `docs/blockchain.md`. Outputs: `results/blockchain/`.
+
+## Implementation
+
+- **`src/blockchain/ledger.py`** (standard library only):
+  - Blocks are `index → previous_hash → timestamp → round → experiment_id → participants {client_id, num_samples, update_hash} → aggregation_hash → metadata → block_hash`.
+  - SHA-256 over canonical JSON.
+  - Genesis records the initial model hash.
+  - Full chain validation (schema, index, hash, links, round order, timestamps), with an optional external anchor (length and tip hash).
+  - `verify_update` / `verify_aggregate` against off-chain payload bytes.
+  - Atomic JSON Lines persistence.
+  - The schema rejects anything other than hashes, identifiers, counts, and short scalar metadata, so ECG data, parameters, and (encrypted) updates cannot go on-chain.
+- **`tamper.py`:** 13 seeded tamper scenarios. **`benchmark.py`:** synthetic, deterministic FL-shaped records with 5 clients per round. **`configs/blockchain/ledger_v1.json`.**
+- **Tests:** 12 deterministic tests, including pinned block digests and a fixed clock (71 tests in total). During testing, `append_round` was changed to *reject*, rather than silently drop, unknown participant fields.
+
+## Results
+
+- **Cost:** block creation about 65 µs, validation about 45 µs per block, both linear up to 10,000 blocks (0.67 s and 0.45 s). Storage is about 1.07 KB per block. A 20-round ledger is 21.9 KB (about 0.26% of the 20-round plaintext FedAvg traffic).
+- **Hashing:** SHA-256 of a block takes about 0.9 µs; canonical encoding about 16.5 µs dominates. Hashing a 41 KB update takes 19 µs and a 994 KB ciphertext-sized update 0.44 ms (about 2.2–2.3 GB/s).
+- **Tamper detection (200 trials each):** 10 scenarios are 100% detected by internal validation, and edit-plus-rehash of a single block 93.5% (missed only when the edited block is the tip). A full rewrite with recomputed hashes and truncation of the newest blocks are 0% detected internally, by construction. **With the external anchor, all 13 scenarios are detected in 100% of trials.**
+
+## Interpretation
+
+The ledger's overhead is negligible at FL scale, and it reliably detects inconsistent edits. Its integrity guarantee rests on an independently held anchor: a single-node hash chain cannot detect a consistent rewrite or truncation by whoever controls the file. Consensus, replication, signatures, and authenticated clients are absent, and are the open design questions for the actual blockchain layer (RQ4).
+
+## Unresolved questions
+
+- How to protect and distribute the anchor: replication across institutions, signatures, or a permissioned network. Which permissioned platform, if any, the literature supports.
+- Client authentication (signed participation records) and a trusted time source.
+- How to integrate with FL (recording real round hashes from FedAvg, DP, or HE runs) without placing data or parameters on-chain.
+- Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
+
+No FL integration, DP, HE integration, attack, or proposed-algorithm code was implemented in Day 15. Nothing was committed or pushed.

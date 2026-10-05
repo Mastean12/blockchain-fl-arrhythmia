@@ -1,0 +1,3 @@
+payload,payload_bytes,seconds_per_hash,throughput_MB_per_s,seconds_per_round_5_clients_plus_aggregate
+plaintext_model_update_day10,41428,1.884549999886076e-05,2198.29667573184,0.00011307299999316456
+he_ciphertext_update_day14,994171,0.0004354010000042763,2283.345697392141,0.0026124060000256577

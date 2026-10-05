@@ -1,0 +1,14 @@
+scenario,trials,detected_internal,detected_with_anchor,internal_rate,anchored_rate
+edit_update_hash,200,200,200,1.0,1.0
+edit_update_hash_and_rehash_block,200,187,200,0.935,1.0
+edit_num_samples,200,200,200,1.0,1.0
+remove_participant_record,200,200,200,1.0,1.0
+edit_aggregation_hash,200,200,200,1.0,1.0
+edit_timestamp,200,200,200,1.0,1.0
+edit_round_number,200,200,200,1.0,1.0
+delete_block,200,200,200,1.0,1.0
+swap_adjacent_blocks,200,200,200,1.0,1.0
+insert_forged_block,200,200,200,1.0,1.0
+full_rewrite_with_recomputed_hashes,200,0,200,0.0,1.0
+truncate_newest_blocks,200,0,200,0.0,1.0
+file_byte_flip_on_disk,200,200,200,1.0,1.0
