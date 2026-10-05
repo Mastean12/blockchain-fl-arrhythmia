@@ -1,0 +1,65 @@
+{
+  "method_id": "proposed_robust_fedavg_v1",
+  "description": "Proposed robust aggregation: trainable-parameter update clipping, cosine/norm screening against the coordinate-wise median update, sample-weighted aggregation over accepted clients, and separate robust BatchNorm running-statistic aggregation. Parameters frozen from the seed-7 calibration before any evaluation run.",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [
+    42,
+    123,
+    2024
+  ],
+  "partition_strategy": "random_group_equal_count",
+  "defense": {
+    "enabled": true,
+    "name": "proposed_robust_fedavg_v1",
+    "mode": "defend",
+    "update_scope": "trainable parameters (conv/linear weights and biases, BatchNorm affine weight and bias)",
+    "clipping_norm": 2.603,
+    "reference_direction": "coordinate_wise_median",
+    "cosine_threshold": 0.1814,
+    "norm_ratio_threshold": 2.0,
+    "weighting": "prior sample weights renormalised over accepted clients; flagged clients receive weight 0",
+    "bn_running_stats": "coordinate_wise_median_of_accepted",
+    "bn_variance_floor": 1e-05,
+    "fallback": "coordinate-wise median of clipped updates if no client is accepted"
+  },
+  "calibration": {
+    "config": "configs/proposed/calibration_v1.json",
+    "seed": 7,
+    "source": "results/proposed/calibration/metrics/federated/calibration_s7_defense_client_diagnostics.csv",
+    "honest_client_rounds": 100,
+    "honest_update_norm": {
+      "min": 1.174498067052987,
+      "p95": 2.602956551809476,
+      "max": 3.129089253400163
+    },
+    "honest_norm_ratio": {
+      "min": 0.8715413185921982,
+      "max": 1.2545288997917503
+    },
+    "honest_cosine_to_median": {
+      "min": 0.3627047607308852,
+      "median": 0.4972442662714166,
+      "max": 0.7297276138289038
+    },
+    "rules": {
+      "clipping_norm": "95th percentile of honest parameter-update L2 norms over all clients and rounds",
+      "norm_ratio_threshold": "max(2.0, 1.5 * maximum honest norm ratio to the per-round median client norm)",
+      "cosine_threshold": "0.5 * minimum honest cosine to the coordinate-wise median update (0.0 if that minimum is not positive)",
+      "bn_variance_floor": "1e-5, equal to BatchNorm1d eps (fixed a priori, not calibrated)"
+    }
+  },
+  "conditions": {
+    "clean": null,
+    "sign_flip": "configs/security/attacks_v1.json#attacks.sign_flip",
+    "scaled": "configs/security/attacks_v1.json#attacks.scaled",
+    "random_noise": "configs/security/attacks_v1.json#attacks.random_noise"
+  },
+  "attack_config": "configs/security/attacks_v1.json",
+  "model_selection": "unchanged predefined rule: minimum validation loss over rounds 0-20; test evaluated once per run",
+  "comparators": {
+    "clean_fedavg": "results/robustness (Day 11 natural runs)",
+    "attacked_fedavg_no_defense": "results/security (Day 17 runs)"
+  },
+  "run_id_template": "defended_{condition}_s{seed}",
+  "output_root": "results/proposed"
+}

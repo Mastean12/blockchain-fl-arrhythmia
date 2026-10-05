@@ -380,3 +380,61 @@ def plot_attack_deviation(deviation, path):
                  "reported separately)", fontsize=12, color=INK)
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+def plot_defense_comparison(runs, path):
+    """Per condition: plain FedAvg (hollow, left) vs proposed defense (filled, right), one colour per seed."""
+    conditions = [c for c in ["clean", "sign_flip", "scaled", "random_noise"] if c in set(runs["condition"])]
+    styles = _seed_style([int(s) for s in runs["seed"].unique()])
+    panels = [("accuracy", "Test accuracy"), ("macro_f1", "Test macro-F1 (15 classes)"),
+              ("weighted_f1", "Test weighted-F1")]
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.8), layout="constrained")
+    for ax, (metric, title) in zip(axes, panels):
+        _style(ax)
+        ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(len(conditions))))
+        for x, condition in enumerate(conditions):
+            subset = runs[runs["condition"] == condition].sort_values("seed")
+            plain_col = f"clean_{metric}" if condition == "clean" else f"undefended_{metric}"
+            for j, (_, row) in enumerate(subset.iterrows()):
+                seed = int(row["seed"])
+                color, marker = styles[seed]
+                dx = (j - 1) * 0.05
+                ax.plot(x - 0.17 + dx, row[plain_col], marker=marker, markersize=9, linestyle="none",
+                        markerfacecolor="none", markeredgecolor=color, markeredgewidth=1.8)
+                ax.plot(x + 0.17 + dx, row[f"defended_{metric}"], marker=marker, markersize=9, linestyle="none",
+                        color=color, label=f"seed {seed}" if (x == 0 and ax is axes[0]) else None)
+        ax.set_xticks(range(len(conditions)), [c.replace("_", " ") for c in conditions])
+        ax.set_xlim(-0.6, len(conditions) - 0.4)
+        ax.set_title(title, loc="left", fontsize=11, color=INK)
+    axes[0].plot([], [], marker="o", linestyle="none", markerfacecolor="none", markeredgecolor=MUTED,
+                 label="hollow: FedAvg, no defense")
+    axes[0].plot([], [], marker="o", linestyle="none", color=MUTED, label="filled: proposed defense")
+    axes[0].legend(fontsize=8, frameon=False, loc="lower left")
+    fig.suptitle("Proposed robust aggregation vs plain FedAvg under one malicious client (test, evaluated once per run)",
+                 fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def plot_defense_weights(weights, path):
+    """Attacker's aggregation weight per round: prior (dashed) vs after the defense (solid), per attack and seed."""
+    attacks = [c for c in ["sign_flip", "scaled", "random_noise"] if c in set(weights["condition"])]
+    styles = _seed_style([int(s) for s in weights["seed"].unique()])
+    fig, axes = plt.subplots(1, len(attacks), figsize=(5 * len(attacks), 4.2), layout="constrained",
+                             squeeze=False, sharey=True)
+    for ax, attack in zip(axes[0], attacks):
+        _style(ax)
+        subset = weights[(weights["condition"] == attack) & (weights["is_attacker"])]
+        for seed, run in subset.groupby("seed"):
+            color, marker = styles[int(seed)]
+            ax.plot(run["round"], run["prior_weight"], color=color, linewidth=1.5, linestyle="--")
+            ax.plot(run["round"], run["defended_weight"], color=color, marker=marker, markersize=5, linewidth=2,
+                    label=f"seed {int(seed)}")
+        ax.set_ylim(-0.02, 0.3)
+        ax.set_title(attack.replace("_", " "), loc="left", fontsize=11, color=INK)
+        ax.set_xlabel("Communication round", color=MUTED)
+    axes[0][0].set_ylabel("Attacker aggregation weight", color=MUTED)
+    axes[0][0].legend(fontsize=8, frameon=False, title="solid: after defense; dashed: FedAvg prior", title_fontsize=8)
+    fig.suptitle("Malicious client's weight before and after the proposed defense", fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

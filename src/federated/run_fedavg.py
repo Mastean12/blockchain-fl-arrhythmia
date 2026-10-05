@@ -115,6 +115,14 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         from .attacks import apply_attack, choose_attacker, flat_float_state, noise_generator as attack_noise
         from .attacks import validate_attack_config
         validate_attack_config(attack_cfg)
+    defense_cfg = config.get("defense")
+    if defense_cfg is not None:
+        if (privacy is not None or he_cfg is not None or bc_cfg is not None
+                or config["aggregation"].get("batchnorm", "aggregate") != "aggregate"):
+            raise ValueError("The proposed defense is evaluated with plain FedAvg only (no DP, HE, blockchain or local BatchNorm)")
+        from .proposed_defense import partition_keys, robust_aggregate, validate_defense_config
+        from .attacks import flat_float_state
+        validate_defense_config(defense_cfg)
     root = Path(output_root or config["output_root"])
     exp = config["experiment_id"]
     model_dir = root / "models" / "federated"
@@ -160,6 +168,8 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     dp_rounds, dp_clients = [], []
     he_rounds = []
     attack_rounds, trajectory = [], []
+    defense_clients, defense_rounds = [], []
+    defense_keys = partition_keys(global_model) if defense_cfg is not None else None
     recorder = None
     if bc_cfg is not None:
         # Read-only observer: hashes and archives states; never modifies them or consumes RNG.
@@ -180,8 +190,10 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     if attack_cfg is not None:
         attacker = int(attack_cfg["client_index"]) if "client_index" in attack_cfg else choose_attacker(
             seed, attack_cfg["selection_seed_offset"], len(client_data))
-        trajectory.append(flat_float_state(global_state))
         log(f"Attack {attack_cfg['name']}: compromised client {partition['clients'][attacker]['client_id']}")
+    track_trajectory = attacker is not None or defense_cfg is not None
+    if track_trajectory:
+        trajectory.append(flat_float_state(global_state))
 
     history = [{"round": 0, "participants": 0, "client_train_loss_weighted": None,
                 "client_train_accuracy_weighted": None, "elapsed_seconds": 0.0,
@@ -218,7 +230,14 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
                                                                    attack_cfg, generator)
             attack_rounds.append({"round": round_index, "attacker": partition["clients"][attacker]["client_id"],
                                   "attacker_weight": counts[position] / sum(counts), **attack_diag})
-        if he_session is not None:
+        if defense_cfg is not None:
+            ids = [partition["clients"][k]["client_id"] for k in selected]
+            global_state, d_rows, d_summary = robust_aggregate(global_state, [u["state"] for u in updates], counts,
+                                                               defense_cfg, defense_keys, ids)
+            for k, row in zip(selected, d_rows):
+                defense_clients.append({"round": round_index, "is_attacker": k == attacker, **row})
+            defense_rounds.append({"round": round_index, **d_summary})
+        elif he_session is not None:
             global_state, he = he_fedavg_aggregate(global_state, [u["state"] for u in updates], counts, he_session)
             he_rounds.append({"round": round_index, "participants": len(selected),
                               "encrypt_seconds_all_clients": he["encrypt_seconds"],
@@ -253,10 +272,11 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
             recorder.record_round(round_index, [partition["clients"][k]["client_id"] for k in selected], counts,
                                   [u["state"] for u in updates], global_state,
                                   metadata={"aggregation": "FedAvg", "participants": len(selected)})
-        if attacker is not None:
+        if track_trajectory:
             vector = flat_float_state(global_state)
             trajectory.append(vector)
-            attack_rounds[-1]["global_state_finite"] = bool(np.isfinite(vector).all())
+            if attacker is not None:
+                attack_rounds[-1]["global_state_finite"] = bool(np.isfinite(vector).all())
         set_model_state(global_model, global_state)
         weights = np.asarray(counts, dtype=float) / sum(counts)
         row = {"round": round_index, "participants": len(selected),
@@ -290,7 +310,11 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         _write_csv(metrics_dir / f"{exp}_client_validation_history.csv", client_validation)
     if attacker is not None:
         _write_csv(metrics_dir / f"{exp}_attack_round_diagnostics.csv", attack_rounds)
+    if track_trajectory:
         np.savez_compressed(metrics_dir / f"{exp}_global_trajectory.npz", states=np.stack(trajectory))
+    if defense_cfg is not None:
+        _write_csv(metrics_dir / f"{exp}_defense_client_diagnostics.csv", defense_clients)
+        _write_csv(metrics_dir / f"{exp}_defense_round_diagnostics.csv", defense_rounds)
     if recorder is not None:
         bc_final = recorder.finalize(root / "ledgers" / f"{exp}.jsonl", root / "anchors" / f"{exp}_anchor.json")
         selected_block = next(b for b in recorder.ledger.blocks if b.round == best["round"])
@@ -346,6 +370,9 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
                                  "attacker_client_id": partition["clients"][attacker]["client_id"],
                                  "attacker_segments": partition["clients"][attacker]["segments"],
                                  "non_finite_global_rounds": int(sum(not r["global_state_finite"] for r in attack_rounds))}
+    if defense_cfg is not None:
+        run_summary["defense"] = {"config": defense_cfg,
+                                  "defense_seconds_total": float(sum(r["defense_seconds"] for r in defense_rounds))}
     if bn_mode == "local":
         run_summary["batchnorm_mode"] = bn_mode
         run_summary["batchnorm_state_keys"] = bn_keys
@@ -356,7 +383,9 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
                                     ("FedBN-style evaluation model" if bn_mode == "local"
                                      else "DP-FedAvg global model" if privacy is not None
                                      else "HE-FedAvg global model" if he_session is not None
-                                     else f"FedAvg under {attack_cfg['name']} attack" if attacker is not None
+                                     else ("Defended FedAvg" if defense_cfg is not None else "FedAvg")
+                                     + (f" under {attack_cfg['name']} attack" if attacker is not None else "")
+                                     if attacker is not None or defense_cfg is not None
                                      else "FedAvg global model")
                                     + f" (round {best['round']}) — held-out test confusion matrix",
                                     figures_dir / f"{exp}_confusion_matrix.png")

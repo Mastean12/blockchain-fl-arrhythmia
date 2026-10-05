@@ -38,3 +38,10 @@ results/blockchain_integration/metrics/federated/*.npz
 # (src.federated.security.run_all with configs/security/attacks_v1.json).
 results/security/models/
 results/security/metrics/federated/*.npz
+
+# Day 18 proposed-defense runs: per-run checkpoints, prediction arrays and global trajectories are regenerable
+# (src.federated.proposed_study.run_all with configs/proposed/robust_defense_v1.json).
+results/proposed/models/
+results/proposed/metrics/federated/*.npz
+results/proposed/calibration/models/
+results/proposed/calibration/metrics/federated/*.npz

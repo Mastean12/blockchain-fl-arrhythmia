@@ -1,0 +1,22 @@
+{
+  "calibration_id": "proposed_defense_calibration_v1",
+  "purpose": "Derive the proposed defense's fixed parameters from honest client statistics of ONE clean FedAvg run on a NON-evaluation seed. No attack, no test evaluation, no validation-based tuning.",
+  "seed": 7,
+  "evaluation_seeds_excluded": [42, 123, 2024],
+  "base_config": "configs/federated/fedavg_v1.json",
+  "partition_strategy": "random_group_equal_count",
+  "mode": "observe",
+  "evaluate_test": false,
+  "rules": {
+    "clipping_norm": "95th percentile of honest parameter-update L2 norms over all clients and rounds",
+    "norm_ratio_threshold": "max(2.0, 1.5 * maximum honest norm ratio to the per-round median client norm)",
+    "cosine_threshold": "0.5 * minimum honest cosine to the coordinate-wise median update (0.0 if that minimum is not positive)",
+    "bn_variance_floor": "1e-5, equal to BatchNorm1d eps (fixed a priori, not calibrated)"
+  },
+  "placeholder_defense_for_observe_mode": {
+    "enabled": true, "name": "calibration_observer", "mode": "observe", "clipping_norm": 1.0e9,
+    "cosine_threshold": -1.0, "norm_ratio_threshold": 1.0e9, "bn_variance_floor": 1e-5,
+    "reference_direction": "coordinate_wise_median", "bn_running_stats": "coordinate_wise_median_of_accepted"
+  },
+  "output_root": "results/proposed/calibration"
+}

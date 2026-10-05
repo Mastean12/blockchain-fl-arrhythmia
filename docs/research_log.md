@@ -617,3 +617,59 @@ Plain FedAvg has no protection against unchecked update magnitude or direction. 
 - Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
 
 No defense, DP, HE, blockchain, or proposed-algorithm code was added in Day 17. Nothing was committed or pushed.
+
+
+# Day 18 — Proposed robust aggregation defense
+
+**Date:** 2026-10-05
+
+## Purpose
+
+Design and evaluate a robust FedAvg aggregation motivated by Day 17. This is a candidate defense; no novelty claim is made. Full report: `docs/proposed_method.md`. Outputs: `results/proposed/`.
+
+## Method
+
+Per round, on the server:
+
+1. Δ_k over trainable parameters only.
+2. L2 clipping at C.
+3. Cosine to the coordinate-wise median update.
+4. A client is flagged if the cosine is below τ_cos or its norm ratio to the median client norm exceeds τ_norm. Flagged clients get weight 0; the sample weights are renormalised.
+5. Weighted aggregation of the clipped updates.
+6. BatchNorm running statistics are aggregated separately, as the coordinate-wise median of accepted clients, with a variance floor of 10⁻⁵.
+
+The defense adds no communication and no client computation.
+
+- **Code:** `src/federated/proposed_defense.py`, a `defense` branch in `run_fedavg.py` (it may be combined with attacks, but not with DP, HE, blockchain, or local BatchNorm), and `src/federated/proposed_study.py`.
+- **Tests:** 12 new tests, written and passed before any run (98 in total).
+
+## Calibration (no test or validation tuning)
+
+The rules were declared in `configs/proposed/calibration_v1.json` and applied to the honest statistics of one clean FedAvg run on **seed 7**, which is not an evaluation seed. That run used observe mode, with no test evaluation. The results, frozen in `configs/proposed/robust_defense_v1.json`, are C = 2.603 (95th percentile of honest norms), τ_norm = 2.0, and τ_cos = 0.1814 (0.5 × minimum honest cosine).
+
+## Results (12 defended runs: clean plus the 3 Day 17 attacks × seeds 42/123/2024)
+
+- **Sign flip and scaled ×10:**
+  - **Detection:** 100% (20/20 rounds in every seed). The attacker's weight goes from 0.15–0.22 to 0, so the defended runs are bit-identical across the two attacks.
+  - **Breakdown:** eliminated. NaN or negative-variance rounds drop from 7–17 to 0, and final-round validation macro-F1 is 0.07–0.09 against about 0.01 undefended.
+  - **Scaled test results:** accuracy 0.463 ± 0.334 → 0.673 ± 0.025, macro-F1 0.038 → 0.069.
+  - **Sign-flip test results:** macro-F1 is 0.069 against 0.082 undefended, because the undefended score was masked by selecting rounds 3–4, before the breakdown.
+- **Norm-matched noise:** detection is only 5–20%. The median reference includes the attacker, which biases its cosine up to 0.19–0.28, just above τ_cos. The threshold was not re-tuned. Test results stay within seed variability.
+- **False positives:** 0 of 1,020 honest client-rounds flagged across all runs. 5–6% of honest updates were clipped.
+- **Clean cost:** macro-F1 0.070 ± 0.012 against 0.085 ± 0.013 (−0.002 / −0.040 / −0.004 per seed), and accuracy 0.625 against 0.657. This is attributable to clipping and/or median BatchNorm statistics; no ablation was run.
+- **Deviation from clean FedAvg at round 20:** 0.19–0.27 under sign flip and scaled (against 0.34–0.51 and up to 4·10⁵ undefended), and 0.06–0.10 when clean.
+- **Overhead:** 3.6–3.8 ms per round on the server (about 0.07% of training), and 0 extra bytes.
+
+## Interpretation
+
+The proposed aggregation neutralises the two damaging Day 17 attacks with perfect detection and no false positives in this setting. It keeps the global model valid in every round, at a modest clean-utility cost and negligible overhead. Its main weakness is magnitude-matched random noise, caused by the self-inclusive median reference. The noise impact was small here.
+
+## Unresolved questions
+
+- A leave-one-out median reference, to remove the self-inclusion bias. This needs a new predeclared version, not re-tuning v1.
+- An ablation separating the clipping and median-BatchNorm costs on clean utility.
+- Adaptive attackers (just under τ_norm with high cosine), several attackers, and data or label poisoning.
+- Compatibility with DP (noise interacts with screening) and HE (screening needs similarities the encrypted server cannot compute). Blockchain recording of the defense decisions.
+- Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
+
+No DP, HE, blockchain, or additional attacks were added in Day 18. Nothing was committed or pushed.
