@@ -147,6 +147,17 @@ class PersistenceTests(unittest.TestCase):
             self.assertFalse(ok)
             self.assertTrue(any("does not match content" in p for p in problems))
 
+    def test_corrupted_numbers_are_reported_not_raised(self):
+        ledger = build_ledger(3, 5, 42)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "chain.jsonl"
+            ledger.save(path)
+            text = path.read_text(encoding="ascii").replace('"num_samples":16406', '"num_samples":1e406', 1)
+            path.write_text(text, encoding="ascii")
+            ok, problems = Ledger.load(path).validate()  # must return, not raise
+            self.assertFalse(ok)
+            self.assertTrue(any("cannot be canonically encoded" in p for p in problems))
+
     def test_config_declares_requested_block_structure(self):
         config = json.loads((ROOT / "configs/blockchain/ledger_v1.json").read_text(encoding="utf-8"))
         self.assertEqual(config["hash_algorithm"], "sha256")

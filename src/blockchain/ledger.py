@@ -187,7 +187,12 @@ class Ledger:
                 problems.append(f"block {position}: schema: {exc}")
             if block.index != position:
                 problems.append(f"block {position}: index {block.index} != position")
-            if block.compute_hash() != block.block_hash:
+            try:
+                hash_matches = block.compute_hash() == block.block_hash
+            except (TypeError, ValueError) as exc:  # e.g. non-finite or non-serializable values from a corrupted file
+                hash_matches = False
+                problems.append(f"block {position}: content cannot be canonically encoded ({exc})")
+            if not hash_matches:
                 problems.append(f"block {position}: stored hash does not match content")
             if position == 0:
                 if block.previous_hash != GENESIS_PREVIOUS_HASH or block.round != 0 or block.participants:

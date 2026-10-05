@@ -1,0 +1,4 @@
+seed,run_id,chain_valid_with_anchor,hashes_checked,hashes_matching,client_hashes_checked,global_hashes_checked,selected_round,selected_checkpoint_hash_matches_ledger
+42,fedavg_blockchain_v1_natural_s42,True,121,121,100,21,3,True
+123,fedavg_blockchain_v1_natural_s123,True,121,121,100,21,2,True
+2024,fedavg_blockchain_v1_natural_s2024,True,121,121,100,21,17,True

@@ -1,0 +1,16 @@
+metric,mean_delta,min_delta,max_delta,seeds_fedavg_blockchain_higher,seeds_fedavg_blockchain_lower
+selected_round,0.0,0.0,0.0,0,0
+best_validation_loss,-1.4802973661668753e-16,-2.220446049250313e-16,0.0,0,2
+val_accuracy,0.0,0.0,0.0,0,0
+val_macro_f1,7.864079757761526e-17,6.938893903907228e-17,9.71445146547012e-17,3,0
+val_weighted_f1,0.0,0.0,0.0,0,0
+test_accuracy,0.0,0.0,0.0,0,0
+test_macro_precision,3.23815048849004e-17,0.0,8.326672684688674e-17,2,0
+test_macro_recall,6.013708050052931e-17,1.3877787807814457e-17,9.71445146547012e-17,3,0
+test_macro_f1,3.700743415417188e-17,1.3877787807814457e-17,5.551115123125783e-17,3,0
+test_weighted_precision,0.0,0.0,0.0,0,0
+test_weighted_recall,0.0,0.0,0.0,0,0
+test_weighted_f1,0.0,0.0,0.0,0,0
+test_macro_auroc,0.0,0.0,0.0,0,0
+test_weighted_auroc,0.0,0.0,0.0,0,0
+n_predicted_classes,0.0,0.0,0.0,0,0

@@ -27,3 +27,9 @@ results/privacy/metrics/federated/*.npz
 # (src.federated.robustness.run_all with configs/he/he_fedavg_v1.json).
 results/he/models/
 results/he/metrics/federated/*.npz
+
+# Day 16 blockchain integration: off-chain model archive, checkpoints and prediction arrays are regenerable
+# (src.federated.robustness.run_all with configs/blockchain/fedavg_blockchain_v1.json). Ledgers and anchors stay tracked.
+results/blockchain_integration/offchain/
+results/blockchain_integration/models/
+results/blockchain_integration/metrics/federated/*.npz

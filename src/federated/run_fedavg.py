@@ -100,6 +100,13 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         from src.he.ckks import CKKSSession
         from src.he.config import validate_he_config
         he_params = validate_he_config(he_cfg)
+    bc_cfg = config.get("blockchain")
+    if bc_cfg is not None:
+        if bc_cfg.get("enabled") is not True or not bc_cfg.get("ledger_id"):
+            raise ValueError("blockchain section needs enabled=true and a ledger_id")
+        if privacy is not None or he_cfg is not None or config["aggregation"].get("batchnorm", "aggregate") != "aggregate":
+            raise ValueError("Blockchain recording is integrated with plain FedAvg only (no DP, HE or local BatchNorm)")
+        from src.blockchain.fl_recorder import FLLedgerRecorder, state_hash
     root = Path(output_root or config["output_root"])
     exp = config["experiment_id"]
     model_dir = root / "models" / "federated"
@@ -144,6 +151,13 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     client_validation = []
     dp_rounds, dp_clients = [], []
     he_rounds = []
+    recorder = None
+    if bc_cfg is not None:
+        # Read-only observer: hashes and archives states; never modifies them or consumes RNG.
+        recorder = FLLedgerRecorder(bc_cfg["ledger_id"], exp, global_state, root / "offchain" / exp,
+                                    limits=bc_cfg.get("limits"),
+                                    metadata={"aggregation": "FedAvg", "seed": seed,
+                                              "partition_strategy": config["partition"]["strategy"]})
     if he_cfg is not None:
         key_start = time.perf_counter()
         he_session = CKKSSession(he_params)
@@ -211,6 +225,10 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
             for k, norm_value, was_clipped in zip(selected, dp["update_norms"], dp["clipped"]):
                 dp_clients.append({"round": round_index, "client_id": partition["clients"][k]["client_id"],
                                    "update_l2_norm_unclipped": norm_value, "clipped": was_clipped})
+        if recorder is not None:
+            recorder.record_round(round_index, [partition["clients"][k]["client_id"] for k in selected], counts,
+                                  [u["state"] for u in updates], global_state,
+                                  metadata={"aggregation": "FedAvg", "participants": len(selected)})
         set_model_state(global_model, global_state)
         weights = np.asarray(counts, dtype=float) / sum(counts)
         row = {"round": round_index, "participants": len(selected),
@@ -242,6 +260,13 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
     torch.save(artifact, model_path)
     if client_validation:
         _write_csv(metrics_dir / f"{exp}_client_validation_history.csv", client_validation)
+    if recorder is not None:
+        bc_final = recorder.finalize(root / "ledgers" / f"{exp}.jsonl", root / "anchors" / f"{exp}_anchor.json")
+        selected_block = next(b for b in recorder.ledger.blocks if b.round == best["round"])
+        bc_final["selected_round"] = best["round"]
+        bc_final["selected_checkpoint_hash_matches_ledger"] = state_hash(best["state"]) == selected_block.aggregation_hash
+        _write_csv(metrics_dir / f"{exp}_blockchain_round_timings.csv", recorder.timings)
+        _write_json(metrics_dir / f"{exp}_blockchain_summary.json", {"blockchain_config": bc_cfg, **bc_final})
     if he_session is not None:
         import tenseal
         _write_csv(metrics_dir / f"{exp}_he_round_diagnostics.csv", he_rounds)
@@ -283,6 +308,8 @@ def run_experiment(config_path="configs/federated/fedavg_v1.json", *, evaluate_t
         run_summary["privacy"] = {"config": privacy, "accounting": accounting}
     if he_session is not None:
         run_summary["homomorphic_encryption"] = {"config": he_cfg, **he_setup}
+    if recorder is not None:
+        run_summary["blockchain"] = {"config": bc_cfg, **bc_final}
     if bn_mode == "local":
         run_summary["batchnorm_mode"] = bn_mode
         run_summary["batchnorm_state_keys"] = bn_keys

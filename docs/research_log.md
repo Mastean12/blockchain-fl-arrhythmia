@@ -527,3 +527,50 @@ The ledger's overhead is negligible at FL scale, and it reliably detects inconsi
 - Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
 
 No FL integration, DP, HE integration, attack, or proposed-algorithm code was implemented in Day 15. Nothing was committed or pushed.
+
+
+# Day 16 — Blockchain ledger integrated with FedAvg
+
+**Date:** 2026-10-05
+
+## Purpose
+
+Connect the Day 15 ledger to real FedAvg rounds and test whether recording is behaviour-neutral, verifiable, tamper-evident, and cheap. Full report: `docs/blockchain_fl_integration.md`. Outputs: `results/blockchain_integration/`.
+
+## Implementation
+
+- **`src/blockchain/fl_recorder.py`:**
+  - Canonical state hashing: SHA-256 over key, dtype, shape, and raw values of every state entry.
+  - `FLLedgerRecorder`: genesis holds the initial model hash. Each round's block holds the client IDs, sample counts, client model-state hashes, and the global-state hash.
+  - An off-chain archive of the hashed states, with `verify_against_off_chain`.
+- **Orchestrator:** a `blockchain` branch in `run_fedavg.py` with a read-only recorder (no RNG use, no state changes). It cannot be combined with DP, HE, or local BatchNorm. The default path still reproduces the official Day 10 model bit-identically.
+- **Study configuration:** `configs/blockchain/fedavg_blockchain_v1.json`, with seeds 42, 123, and 2024, paired with the Day 11 natural FedAvg runs.
+- **Tests:** 6 new integration tests run the real pipeline on a synthetic split, plus 1 ledger regression test (78 in total).
+
+## Results
+
+- **Equivalence:** in all 3 seeds the selected model, test predictions, round history, and test metrics are **bit-identical** to FedAvg without blockchain (test macro-F1 0.0848 / 0.0986 / 0.0717).
+- **Verification:**
+  - 363/363 on-chain hashes (300 client, 63 global) match the off-chain artifacts.
+  - Each saved selected checkpoint's hash equals the hash on-chain for its round.
+  - All chains are valid with their anchors.
+- **Overhead:**
+  - Hashing takes about 1.3 ms per round (0.2 ms per state), block creation about 0.13 ms, and validation 1.1–1.4 ms per run.
+  - Hashing plus blocks totals 0.027–0.031 s per run, **about 0.025% of training time**.
+  - The ledger is about 22.3 KB per run (about 1.07 KB per block).
+  - The off-chain archive costs about 5 ms per round and 5.7 MB per run, and dominates storage.
+- **Tamper detection** (8,400 trials on the real ledgers): every scenario is 100% detected with the anchor. Without it, edit-and-rehash is detected 94.3% of the time (misses only at the tip), and full rewrite and truncation 0%, by construction. Perturbing one off-chain model value is 100% detected.
+- **Bug fixed:** a corrupted number (for example `1e406`, parsed as infinity) made `Ledger.validate()` raise instead of report. It now reports the problem, and a regression test was added. Day 15 results are unaffected.
+
+## Interpretation
+
+Ledger recording is behaviour-neutral and costs about 0.03% of training time. It makes every recorded client and global model verifiable against the actual artifacts. Integrity against a consistent rewrite still depends on an independently held anchor. The server-side recorder trusts the server to hash what it aggregates. Client authentication, signatures, consensus, and client-side commitments are not implemented, and no privacy claim is made.
+
+## Unresolved questions
+
+- Client-side commitments: clients publish signed hashes of their own updates and verify the recorded global hash, so a malicious server cannot misreport.
+- Anchor protection: replication or a permissioned network across institutions.
+- Recording DP or HE rounds, which would hash noised updates or ciphertexts. This is not done yet.
+- Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
+
+No DP, HE integration, attack, or proposed-algorithm code was implemented in Day 16. Nothing was committed or pushed.

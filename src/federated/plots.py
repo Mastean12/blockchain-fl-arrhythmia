@@ -289,3 +289,33 @@ def plot_ledger_scaling(scaling, path):
     ax.legend(fontsize=8, frameon=False)
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+def plot_blockchain_overhead(per_seed, path):
+    """Mean per-round time of each recording step vs the mean FedAvg round time (log scale), per seed."""
+    styles = _seed_style(per_seed["seed"].unique())
+    components = [("hash_ms_per_round", "Hash 5 client states + global"),
+                  ("block_creation_ms_per_round", "Create and append block"),
+                  ("off_chain_save_ms_per_round", "Save off-chain archive"),
+                  ("validate_ms_full_chain", "Validate full chain (once per run)"),
+                  ("fl_round_ms", "FedAvg round (training, aggregation, validation)")]
+    data = per_seed.assign(fl_round_ms=1e3 * per_seed["training_seconds_with"] / 20)
+    fig, ax = plt.subplots(figsize=(11, 4.8), layout="constrained")
+    _style(ax)
+    ax.xaxis.set_major_locator(matplotlib.ticker.LogLocator())
+    for i, (key, label) in enumerate(components):
+        for j, (_, row) in enumerate(data.sort_values("seed").iterrows()):
+            color, marker = styles[row["seed"]]
+            ax.plot(row[key], i + (j - 1) * 0.18, marker=marker, color=color, markersize=9, linestyle="none",
+                    label=f"seed {row['seed']}" if i == 0 else None)
+    ax.set_yticks(range(len(components)), [label for _, label in components])
+    ax.invert_yaxis()
+    ax.set_xscale("log")
+    values = data[[key for key, _ in components]].to_numpy()
+    ax.set_xlim(values.min() / 3, values.max() * 3)
+    ax.set_xlabel("Milliseconds (log scale)", color=MUTED)
+    ax.set_title("Blockchain recording overhead per FedAvg round (real runs, 5 clients)", loc="left",
+                 fontsize=11, color=INK)
+    ax.legend(fontsize=8, frameon=False, loc="upper right")
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

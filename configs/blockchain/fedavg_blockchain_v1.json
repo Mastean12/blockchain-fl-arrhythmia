@@ -1,0 +1,35 @@
+{
+  "robustness_id": "fedavg_blockchain_v1",
+  "study_title": "FedAvg + blockchain round recording",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [42, 123, 2024],
+  "seed_controls": ["random_seed", "partition.seed"],
+  "primary_partition": "random_group_equal_count",
+  "diagnostic_partitions": [],
+  "run_id_template": "fedavg_blockchain_v1_{partition_label}_s{seed}",
+  "partition_labels": {
+    "random_group_equal_count": "natural"
+  },
+  "extra_overrides": {
+    "blockchain": {
+      "enabled": true,
+      "ledger_id": "fedavg_round_ledger_v1",
+      "ledger_component": "src.blockchain.ledger (Day 15), configs/blockchain/ledger_v1.json",
+      "on_chain": "round, client_id, num_samples, SHA-256 of each client's uploaded model state, SHA-256 of the aggregated global state, timestamp, previous block hash, scalar metadata",
+      "off_chain": "client and global model states per round (results/blockchain_integration/offchain/, not tracked); ECG data never leaves the clients",
+      "state_hash": "SHA-256 over canonical state bytes: per entry key, dtype, shape, raw little-endian values",
+      "role": "read-only observer: hashing and archiving never modify states or consume RNG"
+    }
+  },
+  "comparator": {
+    "description": "Day 11 standard FedAvg without blockchain, natural partition, same seeds (paired: same partition, initialization, training order and code path)",
+    "runs_table": "results/robustness/tables/robustness_runs.csv",
+    "tables_dir": "results/robustness/tables/federated",
+    "run_id_template": "fedavg_v1_natural_s{seed}"
+  },
+  "arm_label": "fedavg_blockchain",
+  "arm_title": "FedAvg +\nblockchain",
+  "comparison_prefix": "blockchain_vs_fedavg",
+  "paired_title": "Seed-paired comparison: identical FedAvg runs with and without blockchain recording",
+  "output_root": "results/blockchain_integration"
+}

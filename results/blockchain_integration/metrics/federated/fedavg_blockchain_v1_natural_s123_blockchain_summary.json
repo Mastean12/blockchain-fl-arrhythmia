@@ -1,0 +1,21 @@
+{
+  "anchor": {
+    "ledger_id": "fedavg_round_ledger_v1",
+    "length": 21,
+    "tip_hash": "63ac8867275877bf6b17ed1d25b63decbc9b60030edb3fc17f4378e1843393a8"
+  },
+  "blockchain_config": {
+    "enabled": true,
+    "ledger_component": "src.blockchain.ledger (Day 15), configs/blockchain/ledger_v1.json",
+    "ledger_id": "fedavg_round_ledger_v1",
+    "off_chain": "client and global model states per round (results/blockchain_integration/offchain/, not tracked); ECG data never leaves the clients",
+    "on_chain": "round, client_id, num_samples, SHA-256 of each client's uploaded model state, SHA-256 of the aggregated global state, timestamp, previous block hash, scalar metadata",
+    "role": "read-only observer: hashing and archiving never modify states or consume RNG",
+    "state_hash": "SHA-256 over canonical state bytes: per entry key, dtype, shape, raw little-endian values"
+  },
+  "blocks": 21,
+  "ledger_bytes": 22272,
+  "selected_checkpoint_hash_matches_ledger": true,
+  "selected_round": 2,
+  "validate_seconds": 0.001426700000592973
+}
