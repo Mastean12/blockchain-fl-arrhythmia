@@ -574,3 +574,46 @@ Ledger recording is behaviour-neutral and costs about 0.03% of training time. It
 - Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
 
 No DP, HE integration, attack, or proposed-algorithm code was implemented in Day 16. Nothing was committed or pushed.
+
+
+# Day 17 — Malicious-client attacks against plain FedAvg
+
+**Date:** 2026-10-05
+
+## Purpose
+
+Establish the threat model and quantify the vulnerability of standard FedAvg, with no defense, before designing the Day 18 defense. Full report: `docs/malicious_clients.md`. Outputs: `results/security/`.
+
+## Threat model and design
+
+- **Attacker:** one persistent compromised client out of 5, chosen by a seeded draw: `client_04` (15.4% of data), `client_03` (16.4%), and `client_01` (21.9%) for seeds 42, 123, and 2024. With full participation there is one malicious update per round.
+- **Capability:** it knows the global model and its own honest update, does not collude, and reports its true sample count. It manipulates every floating-point entry it transmits, including BatchNorm statistics.
+- **Server:** plain sample-weighted FedAvg with no checks.
+- **Attacks (declared in advance):** sign flip (Δ′ = −Δ), scaled (Δ′ = 10Δ), and norm-matched Gaussian noise (a random direction with ‖Δ′‖ = ‖Δ‖).
+- **Budget and comparator:** the Day 11 budget and protocol, 9 runs in total (3 attacks × 3 seeds). The clean comparator is the Day 11 runs with the same seeds. Deviation is measured against the bit-identical Day 16 archived clean trajectories.
+- **Code:** `src/federated/attacks.py`, an `attack` branch in `run_fedavg.py` (it cannot be combined with DP, HE, blockchain, or local BatchNorm), `src/federated/security.py`, `configs/security/attacks_v1.json`. 8 new tests, 86 in total.
+
+## Results
+
+- **Scaled ×10:** destructive in every seed.
+  - The selected model is a single-class predictor (all `N`, all `V`, all `N`), with macro recall 0.0667.
+  - Test macro-F1 is 0.0528 / 0.0096 / 0.0528 against clean 0.0848 / 0.0986 / 0.0717, and accuracy falls to 0.0778 for seed 123.
+  - BatchNorm running variances go negative and the outputs become NaN from round 1 (in 10–17 of 20 rounds).
+  - Weight deviation from clean reaches 2.5·10² to 4.0·10⁵ × ‖w_clean‖ by round 20.
+  - For seed 42 the selection falls back to round 0, the untrained model.
+- **Sign flip:** test metrics stay near clean (macro-F1 0.082 in every seed), but **only because validation selection picks rounds 3–4**. The global model breaks, with negative variances and NaN outputs, from round 6 or 12 onward (in 7–15 of 20 rounds). The seed-2024 accuracy "gain" (0.684 against 0.569) is a selection-timing artefact.
+- **Norm-matched noise:** absorbed by averaging. Test metrics are within clean variability (Δ macro-F1 −0.005 to +0.015), there is no breakdown, and the deviation is about 0.24–0.31.
+- **Mechanism:** in every run, the rounds with NaN validation loss are exactly the rounds whose global model has a negative BatchNorm running variance. No global model ever had non-finite weights.
+
+## Interpretation
+
+Plain FedAvg has no protection against unchecked update magnitude or direction. A single 10× boosting client is enough to destroy the model, and a sign-flipping client breaks it within 6–12 rounds. The server's clean validation split acts as an implicit, partial defense through round selection, and this masks the sign-flip attack in the reported test metrics. Day 18 should bound or normalise update norms, reject or down-weight anomalous updates, handle BatchNorm statistics explicitly, and report final-round as well as selected-round behaviour.
+
+## Unresolved questions
+
+- Severity across attack magnitudes, numbers of attackers, and attacker data shares, which are confounded with seed here.
+- Adaptive or stealthy attacks against a known defense, and data, label, or backdoor poisoning.
+- How much server-side validation data a robust design should be allowed to assume.
+- Earlier open questions remain: the cause of the `N`/`V` collapse, the variability of the centralized baseline, and taxonomy.
+
+No defense, DP, HE, blockchain, or proposed-algorithm code was added in Day 17. Nothing was committed or pushed.

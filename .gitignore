@@ -33,3 +33,8 @@ results/he/metrics/federated/*.npz
 results/blockchain_integration/offchain/
 results/blockchain_integration/models/
 results/blockchain_integration/metrics/federated/*.npz
+
+# Day 17 malicious-client runs: per-run checkpoints, prediction arrays and global trajectories are regenerable
+# (src.federated.security.run_all with configs/security/attacks_v1.json).
+results/security/models/
+results/security/metrics/federated/*.npz

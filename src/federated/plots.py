@@ -319,3 +319,64 @@ def plot_blockchain_overhead(per_seed, path):
     ax.legend(fontsize=8, frameon=False, loc="upper right")
     fig.savefig(path, dpi=200)
     plt.close(fig)
+
+
+ATTACK_ORDER = ["clean", "sign_flip", "scaled", "random_noise"]
+
+
+def plot_attack_test_metrics(runs, path):
+    """Test accuracy / macro-F1 / weighted-F1 per attack, one marker per seed; clean FedAvg first."""
+    styles = _seed_style([int(x) for x in runs["seed"].unique()])
+    panels = [("accuracy", "Test accuracy"), ("macro_f1", "Test macro-F1 (15 classes)"),
+              ("weighted_f1", "Test weighted-F1")]
+    attacks = [a for a in ATTACK_ORDER if a == "clean" or a in set(runs["attack"])]
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.6), layout="constrained")
+    for ax, (metric, title) in zip(axes, panels):
+        _style(ax)
+        ax.xaxis.set_major_locator(matplotlib.ticker.FixedLocator(range(len(attacks))))
+        for x, attack in enumerate(attacks):
+            if attack == "clean":
+                subset = runs.drop_duplicates("seed")[["seed", f"clean_test_{metric}"]].rename(
+                    columns={f"clean_test_{metric}": "value"})
+            else:
+                subset = runs[runs["attack"] == attack][["seed", f"test_{metric}"]].rename(columns={f"test_{metric}": "value"})
+            subset = subset.sort_values("seed")
+            offsets = np.linspace(-0.12, 0.12, len(subset)) if len(subset) > 1 else [0.0]
+            for dx, (_, row) in zip(offsets, subset.iterrows()):
+                seed = int(row["seed"])
+                color, marker = styles[seed]
+                ax.plot(x + dx, row["value"], marker=marker, color=color, markersize=9, linestyle="none",
+                        label=f"seed {seed}" if x == 0 else None)
+        ax.set_xticks(range(len(attacks)), [a.replace("_", " ") for a in attacks])
+        ax.set_xlim(-0.6, len(attacks) - 0.4)
+        ax.set_title(title, loc="left", fontsize=11, color=INK)
+    axes[0].legend(fontsize=8, frameon=False)
+    fig.suptitle("One malicious client among 5 vs clean FedAvg (held-out test, each run evaluated once)",
+                 fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def plot_attack_deviation(deviation, path):
+    """Relative L2 deviation of the attacked global model from the clean one, per round (log scale)."""
+    attacks = [a for a in ATTACK_ORDER if a in set(deviation["attack"])]
+    styles = _seed_style(deviation["seed"].unique())
+    fig, axes = plt.subplots(1, len(attacks), figsize=(5 * len(attacks), 4.4), layout="constrained",
+                             squeeze=False, sharey=True)
+    for ax, attack in zip(axes[0], attacks):
+        _style(ax)
+        subset = deviation[(deviation["attack"] == attack) & (deviation["round"] > 0)]
+        for seed, run in subset.groupby("seed"):
+            color, marker = styles[seed]
+            finite = run[np.isfinite(run["relative_deviation"])]
+            ax.plot(finite["round"], finite["relative_deviation"], color=color, marker=marker, markersize=4,
+                    linewidth=2, label=f"seed {seed}")
+        ax.set_yscale("log")
+        ax.set_title(f"{attack.replace('_', ' ')}", loc="left", fontsize=11, color=INK)
+        ax.set_xlabel("Communication round", color=MUTED)
+    axes[0][0].set_ylabel("||w_attacked - w_clean|| / ||w_clean||", color=MUTED)
+    axes[0][0].legend(fontsize=8, frameon=False)
+    fig.suptitle("Global-model weight deviation from clean FedAvg (all weights stayed finite; output breakdown is "
+                 "reported separately)", fontsize=12, color=INK)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)

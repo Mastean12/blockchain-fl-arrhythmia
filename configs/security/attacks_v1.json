@@ -1,0 +1,33 @@
+{
+  "study_id": "malicious_clients_v1",
+  "description": "Controlled malicious-client attacks against plain sample-weighted FedAvg (no defense). Declared before any run; not tuned on validation or test results.",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [42, 123, 2024],
+  "partition_strategy": "random_group_equal_count",
+  "threat_model": {
+    "malicious_clients": 1,
+    "total_clients": 5,
+    "attacker_selection": "seeded uniform draw over the 5 clients: numpy default_rng([seed, selection_seed_offset]).integers(5); recorded per run",
+    "persistence": "same compromised client in every round; full participation, so exactly one malicious update per round",
+    "knowledge": "broadcast global model and its own honest update only; no collusion, no access to other clients' updates",
+    "capability": "replaces its transmitted state with w_t + Delta' over all floating-point entries; integer BatchNorm counters unchanged; reports its true sample count",
+    "server": "unmodified sample-weighted FedAvg; no update validation, clipping, or robust aggregation"
+  },
+  "attacks": {
+    "sign_flip": {"type": "sign_flip", "scale": 1.0, "description": "Delta' = -Delta"},
+    "scaled": {"type": "scale", "scale": 10.0, "description": "Delta' = 10 * Delta (boosting / model-replacement magnitude)"},
+    "random_noise": {"type": "gaussian_norm_matched", "norm_multiplier": 1.0, "noise_seed_offset": 31337,
+                     "description": "Delta' = ||Delta|| * z / ||z||, z ~ N(0, I) seeded per seed and round"}
+  },
+  "selection_seed_offset": 1717,
+  "comparator": {
+    "description": "Clean FedAvg: Day 11 natural-partition runs with the same seeds (bit-identical to the Day 16 recorded runs)",
+    "runs_table": "results/robustness/tables/robustness_runs.csv",
+    "tables_dir": "results/robustness/tables/federated",
+    "metrics_dir": "results/robustness/metrics/federated",
+    "run_id_template": "fedavg_v1_natural_s{seed}",
+    "clean_trajectory_archive": "results/blockchain_integration/offchain/fedavg_blockchain_v1_natural_s{seed}"
+  },
+  "run_id_template": "attack_{attack}_s{seed}",
+  "output_root": "results/security"
+}

@@ -1,0 +1,143 @@
+{
+  "attack": {
+    "attacker_client_id": "client_03",
+    "attacker_index": 3,
+    "attacker_segments": 12688,
+    "config": {
+      "enabled": true,
+      "name": "random_noise",
+      "noise_seed_offset": 31337,
+      "norm_multiplier": 1.0,
+      "selection_seed_offset": 1717,
+      "type": "gaussian_norm_matched"
+    },
+    "non_finite_global_rounds": 0
+  },
+  "centralized_validation_reference_epoch1": {
+    "validation_accuracy": 0.6853403461561984,
+    "validation_macro_f1": 0.1737207554842273
+  },
+  "client_segments": [
+    15559,
+    16240,
+    17991,
+    12688,
+    15072
+  ],
+  "config": {
+    "aggregation": {
+      "method": "FedAvg",
+      "weighting": "client_training_samples"
+    },
+    "attack": {
+      "enabled": true,
+      "name": "random_noise",
+      "noise_seed_offset": 31337,
+      "norm_multiplier": 1.0,
+      "selection_seed_offset": 1717,
+      "type": "gaussian_norm_matched"
+    },
+    "data": {
+      "label_config": "configs/preprocessing/mitbih_v1.json",
+      "split_root": "data/splits/mitbih_v1"
+    },
+    "experiment_id": "attack_random_noise_s123",
+    "model": {
+      "architecture": "centralized_cnn_v1",
+      "class": "src.models.cnn1d.ECG1DCNN",
+      "dropout": 0.3
+    },
+    "model_selection": {
+      "metric": "validation_loss",
+      "mode": "min",
+      "split": "validation"
+    },
+    "output_root": "results",
+    "participation": {
+      "fraction": 1.0
+    },
+    "partition": {
+      "min_client_segments": 1000,
+      "num_clients": 5,
+      "seed": 123,
+      "strategy": "random_group_equal_count"
+    },
+    "random_seed": 123,
+    "runtime": {
+      "cpu_threads": 8,
+      "device": "cpu",
+      "evaluation_batch_size": 512,
+      "num_workers": 0
+    },
+    "training": {
+      "batch_size": 256,
+      "client_optimizer_state": "reset_each_round",
+      "learning_rate": 0.001,
+      "local_epochs": 1,
+      "loss": "CrossEntropyLoss",
+      "optimizer": "Adam",
+      "rounds": 20,
+      "shuffle_training": true
+    }
+  },
+  "experiment_id": "attack_random_noise_s123",
+  "final_round_validation": {
+    "client_train_accuracy_weighted": 0.9360799484203741,
+    "client_train_loss_weighted": 0.2676750035817434,
+    "elapsed_seconds": 120.06600350000008,
+    "participants": 5,
+    "round": 20,
+    "validation_accuracy": 0.6994679224512262,
+    "validation_loss": 1.7784969442284848,
+    "validation_macro_f1": 0.08618876469553165,
+    "validation_macro_precision": 0.07181758426012354,
+    "validation_macro_recall": 0.1272214824228396,
+    "validation_weighted_f1": 0.6209565786861798
+  },
+  "model_path": "results/security/models/federated/attack_random_noise_s123_global.pt",
+  "num_clients": 5,
+  "rounds": 20,
+  "selected_round_by_validation_loss": 3,
+  "selected_round_validation": {
+    "client_train_accuracy_weighted": 0.8599226305609283,
+    "client_train_loss_weighted": 0.5104165753293699,
+    "elapsed_seconds": 17.542271599999367,
+    "participants": 5,
+    "round": 3,
+    "validation_accuracy": 0.5344627239924163,
+    "validation_loss": 1.535878345059529,
+    "validation_macro_f1": 0.09845321874696183,
+    "validation_macro_precision": 0.10949439953069717,
+    "validation_macro_recall": 0.09204813627982929,
+    "validation_weighted_f1": 0.5164495624167201
+  },
+  "software": {
+    "numpy": "2.5.3",
+    "torch": "2.14.1+cpu"
+  },
+  "test_evaluated": true,
+  "test_metrics": {
+    "accuracy": 0.6616749148402854,
+    "auroc_defined_class_count": 8,
+    "class_count": 15,
+    "macro_auroc_ovr_defined_classes": 0.6513925450860543,
+    "macro_f1": 0.09402103543291276,
+    "macro_precision": 0.09339343951751221,
+    "macro_recall_all_15_labels_zero_for_no_support": 0.09882187571507961,
+    "macro_sensitivity_supported_classes": 0.18529101696577427,
+    "macro_specificity_all_classes": 0.9425544664179711,
+    "micro_auroc_ovr_flattened": 0.9278793942194792,
+    "micro_f1": 0.6616749148402854,
+    "micro_precision": 0.6616749148402854,
+    "micro_recall": 0.6616749148402854,
+    "weighted_auroc_ovr_defined_classes": 0.7959523961057999,
+    "weighted_f1": 0.5718026941796286,
+    "weighted_precision": 0.5093200362713197,
+    "weighted_recall": 0.6616749148402854,
+    "weighted_sensitivity": 0.6616749148402854,
+    "weighted_specificity": 0.4766420814292821
+  },
+  "trainable_parameters": 10127,
+  "training_elapsed_seconds": 120.42199859999891,
+  "validation_segments": 16351
+}
