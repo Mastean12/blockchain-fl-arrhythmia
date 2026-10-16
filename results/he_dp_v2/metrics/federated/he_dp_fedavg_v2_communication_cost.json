@@ -1,0 +1,183 @@
+{
+  "assumptions": [
+    "Full state_dict (weights, biases, BatchNorm running statistics and counters) sent each way.",
+    "Each participating client receives its own copy of the global model (no multicast saving).",
+    "Uncompressed native dtypes (float32 parameters/statistics, int64 counters).",
+    "No protocol, transport, encryption, or serialization overhead in payload_bytes.",
+    "Analytical calculation for a simulated federation; no network traffic was measured."
+  ],
+  "participants_per_round": [
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5,
+    5
+  ],
+  "payload_bytes_per_model": 41428,
+  "per_round": [
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 1,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 2,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 3,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 4,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 5,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 6,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 7,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 8,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 9,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 10,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 11,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 12,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 13,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 14,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 15,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 16,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 17,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 18,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 19,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    },
+    {
+      "downlink_bytes": 207140,
+      "participants": 5,
+      "round": 20,
+      "total_bytes": 414280,
+      "uplink_bytes": 207140
+    }
+  ],
+  "rounds": 20,
+  "state_dict_elements": 10354,
+  "state_dict_entries": 20,
+  "torch_save_bytes_per_model": 47527,
+  "total_bytes": 8285600,
+  "total_downlink_bytes": 4142800,
+  "total_megabytes": 8.2856,
+  "total_uplink_bytes": 4142800,
+  "trainable_parameters": 10127
+}

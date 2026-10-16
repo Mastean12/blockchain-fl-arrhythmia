@@ -1,0 +1,12 @@
+{
+  "assumptions": [
+    "ciphertext sizes measured from serialized TenSEAL payloads",
+    "global model broadcast estimated as one native state_dict copy per client per round",
+    "transport framing and blockchain are excluded"
+  ],
+  "estimated_noisy_model_broadcast_bytes": 4142800,
+  "measured_client_ciphertext_uplink_bytes": 99408410,
+  "measured_encrypted_aggregate_to_decryptor_bytes": 14105506,
+  "measured_plus_estimated_total_bytes": 117656716,
+  "public_context_setup_bytes": 1859348
+}

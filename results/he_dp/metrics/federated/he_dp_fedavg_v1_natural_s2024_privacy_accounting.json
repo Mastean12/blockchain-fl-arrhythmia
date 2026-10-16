@@ -1,0 +1,36 @@
+{
+  "accounting": {
+    "accountant": "GDP composition (Dong, Roth & Su 2019) + analytic Gaussian conversion (Balle & Wang 2018)",
+    "client_sampling_rate": 1.0,
+    "delta": 1e-05,
+    "epsilon": 7.979543723560064,
+    "epsilon_rdp_upper_bound": 9.359535227141418,
+    "mu_gdp": 1.66250407249055,
+    "noise_multiplier": 2.69,
+    "rdp_optimal_order": 3.8899999999999997,
+    "rounds": 20
+  },
+  "noise_seed_rule": "private per-client run seed + round/client derivation; seed artifact excluded from public metrics",
+  "partition_seed": 2024,
+  "privacy_config": {
+    "accountant": "gdp_full_participation",
+    "accountant_description": "For every client release, sensitivity is at most C and Gaussian standard deviation is at least z*C; T rounds compose by mu-GDP with mu=sqrt(T)/z. No subsampling amplification is claimed.",
+    "client_sampling_rate": 1.0,
+    "clip_scope": "All floating-point model-state update entries; integer BatchNorm counters are a public function of sample counts",
+    "clipping_norm": 1.0,
+    "delta": 1e-05,
+    "enabled": true,
+    "mechanism": "client-level Gaussian mechanism on each client's clipped update before encryption",
+    "noise_calibration": "client k uses std z*C*max(p)/p_k, so its weighted noise contribution alone has std z*C*max(p)",
+    "noise_distribution": "independent Gaussian per client and round; entropy-seeded generator with private seed artifact",
+    "noise_multiplier": 2.69,
+    "noise_placement": "client_before_encryption",
+    "noise_seed_offset": 7919,
+    "privacy_unit": "client",
+    "privacy_unit_description": "All training data of one simulated client; add/remove-one-client adjacency with fixed public sample weights",
+    "rounds": 20,
+    "target_epsilon": 8.0
+  },
+  "selection_note": "Round selection uses only the validation split, which is not client data; selecting among released models is post-processing.",
+  "training_seed": 2024
+}

@@ -1,0 +1,19 @@
+{
+  "anchor": {
+    "ledger_id": "he_dp_fedavg_v2_lifecycle_gate",
+    "length": 41,
+    "tip_hash": "d9592897229f4ab6f3ae1226bdf498ff83fd34fb708db66af52c0269161948f2"
+  },
+  "blockchain_config": {
+    "commit_policy": "commit fixed-roster client IDs, update hashes, protocol metadata, and fixed public aggregation weights before aggregation; never publish sample counts or archive client update tensors; validate the noised global-model hash before validation and checkpoint selection",
+    "enabled": true,
+    "external_anchor": true,
+    "ledger_id": "he_dp_fedavg_v2_lifecycle_gate",
+    "mode": "lifecycle_gate_v2"
+  },
+  "blocks": 41,
+  "ledger_bytes": 48553,
+  "selected_checkpoint_hash_matches_ledger": true,
+  "selected_round": 0,
+  "validate_seconds": 0.0034343999996053753
+}

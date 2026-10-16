@@ -1,0 +1,30 @@
+{
+  "ciphertext_chunks_per_client": 3,
+  "encrypted_entries": 10351,
+  "he_config": {
+    "aggregation": "sample_weighted_fedavg",
+    "coeff_mod_bit_sizes": [
+      60,
+      40,
+      40,
+      60
+    ],
+    "correctness_tolerance": "max |decrypted noisy aggregate - exact weighted noisy aggregate| <= 1e-5 * max(1, max |exact aggregate|)",
+    "enabled": true,
+    "encrypted_quantity": "clipped_noisy_client_update",
+    "global_scale_bits": 40,
+    "key_model": "shared client key in a single-process simulation; server has public context only",
+    "library": "tenseal",
+    "library_version": "0.3.18",
+    "noise_placement": "client_before_encryption",
+    "poly_modulus_degree": 8192,
+    "scheme": "CKKS",
+    "security_basis": "Total coefficient modulus 200 bits <= 218 bits allowed for N=8192 at 128-bit classical security (Microsoft SEAL parameter check)",
+    "security_level_bits": 128,
+    "server_operations": "public-weight scalar multiplication and ciphertext addition; no secret key"
+  },
+  "key_generation_seconds": 0.3886538000001565,
+  "public_context_bytes": 1859246,
+  "slots": 4096,
+  "tenseal_version": "0.3.18"
+}

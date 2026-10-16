@@ -1,0 +1,26 @@
+{
+  "ciphertext_chunks_per_client": 3,
+  "encrypted_entries": 10351,
+  "he_config": {
+    "aggregation": "fixed_public_weighted_fedavg",
+    "coeff_mod_bit_sizes": [
+      60,
+      40,
+      40,
+      60
+    ],
+    "enabled": true,
+    "encrypted_quantity": "clipped_client_update",
+    "global_scale_bits": 40,
+    "key_model": "public-key encryption and trusted decryptor; process isolation is not enforced in this simulation",
+    "library": "tenseal",
+    "library_version": "0.3.18",
+    "poly_modulus_degree": 8192,
+    "scheme": "CKKS",
+    "security_level_bits": 128
+  },
+  "key_generation_seconds": 0.37239799999952083,
+  "public_context_bytes": 1859348,
+  "slots": 4096,
+  "tenseal_version": "0.3.18"
+}

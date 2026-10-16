@@ -1,0 +1,59 @@
+{
+  "accounting": {
+    "accountant": "fixed-weight add/remove-one-client GDP; full-round composition",
+    "adjacency": "add/remove one client contribution; absent slot is zero; roster and weights fixed",
+    "aggregate_noise_std": 0.538,
+    "delta": 1e-05,
+    "epsilon": 7.979543723560064,
+    "limitations": [
+      "full participation only",
+      "trusted decryptor is excluded",
+      "ideal independent Gaussian sampling",
+      "no protection for client identity/roster",
+      "only noised global-model transcript is covered"
+    ],
+    "mu_gdp": 1.66250407249055,
+    "noise_multiplier": 2.69,
+    "privacy_unit": "one participating client's complete local dataset slot",
+    "rdp_epsilon_upper_bound": 9.359535227141418,
+    "rdp_optimal_order": 3.8899999999999997,
+    "rounds": 20,
+    "sampling_rate": 1.0,
+    "sensitivity_l2": 0.2
+  },
+  "noise_seed_rule": "private trusted-decryptor seed + round derivation; seed artifact excluded from public metrics",
+  "partition_seed": 42,
+  "privacy_config": {
+    "accountant": "full_participation_GDP_plus_analytic_Gaussian_conversion",
+    "adjacency": "add_remove_one_client_slot",
+    "adjacency_definition": "Replace one fixed-roster client's contribution by zero while keeping the roster and every public weight unchanged; all other client slots are identical.",
+    "clipping_norm": 1.0,
+    "delta": 1e-05,
+    "enabled": true,
+    "fixed_roster": [
+      "client_00",
+      "client_01",
+      "client_02",
+      "client_03",
+      "client_04"
+    ],
+    "fixed_weights": [
+      0.2,
+      0.2,
+      0.2,
+      0.2,
+      0.2
+    ],
+    "key_ownership": "trusted decryptor owns the CKKS secret key; clients and server receive public encryption context",
+    "noise_multiplier": 2.69,
+    "noise_placement": "one Gaussian vector after trusted decryption of the homomorphic weighted sum",
+    "noise_rng_assumption": "ideal independent Gaussian samples; reproducible PRNG seed is stored in the private artifact directory and not suitable as a production CSPRNG claim",
+    "privacy_unit": "one participating client's complete local dataset slot",
+    "protocol": "he_dp_v2_aggregate_noise",
+    "release_set": "validation-selected global checkpoints and their post-processing validation metrics; no clean aggregates, individual updates, client counts, noise seeds, or unclipped diagnostics",
+    "rounds": 20,
+    "threat_model": "server cannot decrypt individual ciphertexts; the trusted decryptor is honest, does not collude with the server, sees the clean aggregate, and is excluded from the DP guarantee"
+  },
+  "selection_note": "Round selection uses only the validation split, which is not client data; selecting among released models is post-processing.",
+  "training_seed": 42
+}
