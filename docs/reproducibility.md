@@ -21,10 +21,11 @@ All direct dependencies are pinned in [`requirements.txt`](../requirements.txt).
 2. Preprocess: `src.preprocessing.pipeline.process_dataset("data/raw/mitbih", "data/processed/mitbih_v1", "configs/preprocessing/mitbih_v1.json")` (or `python -m src.preprocessing.pipeline`) writes 109,460 segments.
 3. Split: `src.preprocessing.splitting.build_splits("data/processed/mitbih_v1", "data/splits/mitbih_v1", "configs/preprocessing/mitbih_split_v1.json", "configs/preprocessing/mitbih_v1.json")` writes the split. Validate with `validate_saved_splits("data/splits/mitbih_v1", "configs/preprocessing/mitbih_v1.json")`.
 4. Expected hash: `data/splits/mitbih_v1/split_metadata.json` SHA-256 `229b0db300778b0e5203b7d13537840410d52ce86752279f4e419195596831c2`.
+5. SVDB external evaluation provenance and its access-denied recovery are documented in [`svdb_integration.md`](svdb_integration.md). Recovery uses separate, ignored `*_recovered_20261016` data roots and a separate result root; it does not overwrite the original outputs.
 
 ## 3. Re-running each experiment
 
-Every runner below skips completed runs and loads them instead, so the test set is never re-evaluated by accident. `run_experiment` also refuses to overwrite an existing run.
+Batch orchestrators skip completed runs; the direct `run_experiment` runner refuses to overwrite an existing output unless explicitly instructed. Do not rerun a held-out test evaluation into an existing results directory.
 
 | Day | Experiment | Command (from the repository root, inside `.venv`) |
 |---|---|---|
@@ -42,6 +43,8 @@ Every runner below skips completed runs and loads them instead, so the test set 
 | 20 | Final confirmation and consolidation | `src.federated.final_validation.run_all()`, then `python -m src.final_report` |
 
 In the table, `run_all` and `write_reports` without a module refer to `src.federated.robustness`.
+
+The combined HE+DP v2 + blockchain experiment uses the command in [`blockchain_fl_integration.md`](blockchain_fl_integration.md#6-he-dp-v2-lifecycle-integration), with a separate run-specific output root and the documented, digest-verified split override.
 
 **Runtime.** A 20-round FedAvg run takes about 110 s on the CPU used. Day 19's 48 runs took about 90 minutes, and Day 20's 24 runs about 48 minutes.
 
@@ -73,7 +76,7 @@ HE (Day 14) uses SEAL's unseeded CSPRNG, so it reproduces only to within CKKS pr
 ## 6. Tracked versus regenerable artifacts
 
 - **Tracked:** configurations, code, tests, docs, all per-run CSV/JSON metrics and tables, summary figures, the official centralized and FedAvg checkpoints and predictions, ledgers and anchors, and `results/final/`.
-- **Not tracked (regenerable):** raw and processed data, split shards, per-run checkpoints (`*/models/`), per-run `.npz` predictions and trajectories, the Day 16 off-chain model archive, and per-run figures for Days 19–20.
+- **Not tracked (regenerable):** raw and processed data, split shards (including the versioned SVDB recovery), per-run checkpoints (`*/models/`), per-run `.npz` predictions and trajectories, the Day 16 off-chain model archive, and per-run figures for Days 19–20.
 - **Ignore rules:** see `.gitignore`.
 - **Hashes:** the hashes of key frozen artifacts are recorded in `results/final/experiment_manifest.json`.
 

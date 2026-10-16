@@ -10,7 +10,7 @@
 - **Outputs:** `results/blockchain_integration/`
 - **Tests:** `tests/test_blockchain_fl_integration.py`
 
-> The Day 15 ledger now records real FedAvg rounds. No DP, HE, attack, or proposed-algorithm code is involved, and blockchain recording cannot be combined with DP, HE, or local BatchNorm in this version.
+> The Day 15 and Day 16 plain-FedAvg experiments remain unchanged. Their recorder path does not involve DP, HE, attacks, or the proposed algorithm; the separate HE+DP v2 lifecycle experiment is documented below.
 
 ## 1. What is recorded
 
@@ -101,7 +101,7 @@ These run the real `run_experiment` pipeline end to end on a small synthetic spl
 3. **FedAvg results are equivalent.** The selected model, round history and test predictions are bit-identical, and the test metrics are equal.
 4. **No sensitive content is on-chain.** Blocks have exactly the ledger fields. There are no floats anywhere on-chain, no string over 256 characters, and every block is under 2 KB. Neither raw weight bytes nor formatted weight values appear in the file, and nor do the words `weight` or `segments`.
 
-There is also a state-hash determinism and sensitivity test, and a test that combining blockchain with DP is rejected.
+There is also a state-hash determinism and sensitivity test. The earlier combination guard rejected DP/HE with blockchain; the v2 lifecycle section below documents the single newly supported HE+DP v2 + CKKS combination and its dedicated tests. Other combinations remain unsupported.
 
 ## 5. Interpretation
 
@@ -137,3 +137,46 @@ No claim is made about privacy. The ledger reveals only participation, sample co
 - **Ledgers and anchors:** `results/blockchain_integration/ledgers/` and `anchors/`, per seed (tracked)
 - **Per-run outputs:** `results/blockchain_integration/{metrics,tables,figures}/federated/`, including `*_blockchain_round_timings.csv` and `*_blockchain_summary.json`
 - **Not tracked (regenerable):** the off-chain archive, checkpoints, and `.npz` predictions
+
+## 8. Lifecycle-gated experiment v2
+
+`configs/blockchain/fedavg_lifecycle_v2.json` adds a versioned gate to the existing ledger/recorder. In each plain-FedAvg round, the runner hashes the selected client states and appends a `prepared` phase block before invoking the aggregation callback. The recorder verifies the ledger chain, fixed participant roster, sample-count entries, and each update hash against the payload it is about to aggregate. Altered, missing, duplicate, out-of-roster, or stale-base submissions raise an error and prevent aggregation. After FedAvg completes, a `complete` phase block records the global-state hash; the chain and resulting hash are checked before the runner installs/broadcasts that model to the next round. The prepared and completed blocks share a round number and are validated as an ordered pair. Existing one-block-per-round v1 ledgers remain valid.
+
+Tests exercise a successful callback, changed-payload rejection before the callback, missing-roster rejection, completed-round integrity, tamper detection, and an end-to-end plain FedAvg run through the new lifecycle gate. Per-phase hashing, verification, block, off-chain archive, final validation, and ledger byte counts are recorded so overhead can be compared with the no-ledger path. Model-state archives remain off-chain; the ledger contains participant identifiers, sample counts, state hashes, round metadata, and global-state hashes.
+
+This is an active **single-process integrity gate** between the prepared update payloads and the aggregation/broadcast operations. It does not authenticate who created an update: the same coordinator creates the hashes and receives the update objects. It has no consensus, digital signatures, independent replicas, smart contracts, access control, or Byzantine resilience. A malicious coordinator can replace an update before preparing its commitment or rewrite the entire local chain; the external anchor can detect a rewritten/truncated history only when it is retained independently. If a verification error occurs, the current run aborts before aggregation or broadcast; restart from the last preserved checkpoint after correcting the cause. A prepared failure is held in memory and is not guaranteed to survive process termination. No recovery/rollback protocol across independent nodes is implemented.
+
+The lifecycle verifier accepts a prepared block only as the valid current ledger tip during the pre-aggregation gate. Ordinary `validate()` and finalization reject an unfinished prepared tip; pre-aggregation validation opts in to that one pending-tip state. A prior prepared round must be immediately followed by its matching completion block, lifecycle rounds must advance contiguously, and a prepared commitment's previous-model hash must equal the prior block's global-model hash. These checks prevent stale prepared-block replay and out-of-order completion while leaving legacy one-block plain-FedAvg ledgers valid.
+
+The gate demonstrates one measurable role for a blockchain-style ledger: a commitment check controls whether FL aggregation proceeds, and the completed record controls whether a global model is broadcast. It does not by itself resolve the supervisor's open interpretation of what “blockchain enables the experiment or algorithm” must mean. Requirement 4 remains partially evidenced pending supervisor confirmation; no consensus-based distributed-chain claim is made.
+
+## 6. HE+DP v2 lifecycle integration
+
+`configs/blockchain/he_dp_fedavg_v2_lifecycle.json` is a separate configuration, normally writing under `results/he_dp_v2_blockchain_lifecycle/`. It reuses the fixed-roster `he_dp_v2_aggregate_noise` + CKKS protocol and accountant from `configs/he_dp_fedavg_v2.json`; it does not alter that experiment's configuration or outputs. The combined runner is supported only for this protocol, CKKS, aggregate BatchNorm, and `lifecycle_gate_v2`. Other DP/HE/blockchain combinations remain rejected.
+
+Before aggregation, the recorder commits the fixed roster, each client update hash, each configured public weight, the prior global-model hash, round number, and protocol metadata. The ledger schema for this mode contains no `num_samples`; no client update tensors or ciphertexts are stored in the off-chain archive. Only the initial and resulting global states are archived off-chain. The gate revalidates the chain, round sequence, previous model hash, roster, weights, and update hashes immediately before calling the existing `aggregate_he_dp_v2`. A completed block commits the resulting noised global-model hash; chain validation and hash comparison must pass before validation or checkpoint selection. The selected checkpoint hash is checked against its completed ledger record before the checkpoint is written.
+
+Blockchain timings and serialized ledger size are emitted to `*_blockchain_round_timings.csv` and `*_blockchain_summary.json`. HE encryption, CKKS aggregation, trusted decryption, and aggregate-noise generation timings remain in the separate `*_he_dp_v2_costs.csv` and sensitive diagnostics outputs. Blockchain timing is not folded into HE+DP operation timings.
+
+The ledger remains a single-node, hash-chained, tamper-evident log. It has no consensus, replication, membership enforcement, or signatures; internal hashes alone cannot detect a full rewrite or truncation without an independently retained anchor. For the preserved 2026-10-16 run, the anchor is saved beside the ledger in the same result tree, so validation demonstrates consistency with that co-located anchor—not protection against an attacker able to rewrite both. `src.blockchain.anchor_tool` now provides an explicit, non-overwriting export and verification interface. Exporting an anchor does not establish independent custody: an operator must retain it through a separate trusted system or channel.
+
+After a completed run, export its anchor to a new path outside the result tree, transfer it through the project's separately controlled custody process, and later verify the ledger against that retained copy:
+
+```powershell
+$env:PYTHONPATH = "$PWD\tests;$PWD"
+.\.venv\Scripts\python.exe -m src.blockchain.anchor_tool export --ledger "results\he_dp_v2_blockchain_lifecycle_reproduction_20261016\ledgers\he_dp_fedavg_v2_blockchain_lifecycle.jsonl" --anchor "D:\independent-ledger-anchors\he_dp_fedavg_v2_blockchain_lifecycle.json"
+.\.venv\Scripts\python.exe -m src.blockchain.anchor_tool verify --ledger "results\he_dp_v2_blockchain_lifecycle_reproduction_20261016\ledgers\he_dp_fedavg_v2_blockchain_lifecycle.jsonl" --anchor "D:\independent-ledger-anchors\he_dp_fedavg_v2_blockchain_lifecycle.json"
+```
+
+The CLI validates the chain before export, refuses to overwrite an existing anchor, and reports whether a supplied anchor matches the ledger ID, length, and tip hash. Independent custody and authenticity of the transfer remain operational responsibilities; this tool does not sign anchors or add consensus. CKKS confidentiality relies on the key assumptions. The trusted decryptor sees the clean aggregate and is excluded from the DP guarantee; process isolation is not enforced in this simulation. No stronger blockchain or privacy claim is implied.
+
+To reproduce the combined experiment, first obtain the outstanding written approval for the privacy assumptions/release set and confirm the split and utility criteria. Use a fresh, empty output root; do not run the command below against the preserved output tree:
+
+```powershell
+$env:PYTHONPATH = "$PWD\tests;$PWD"
+.\.venv\Scripts\python.exe -c "from src.federated.run_fedavg import run_experiment; run_experiment('configs/blockchain/he_dp_fedavg_v2_lifecycle.json', evaluate_test=True, output_root='results/he_dp_v2_blockchain_lifecycle_reproduction_20261016', overrides={'data': {'split_root': 'data/splits/mitbih_v1'}})"
+```
+
+The preserved 20-round run completed on 2026-10-16 using the runtime split-root override and the distinct `results/he_dp_v2_blockchain_lifecycle_recovered_20261016/` output root. That historical path already exists and must not be reused with `overwrite=True`. The inaccessible `mitbih_he_dp_v1` directory was not modified: the accessible `mitbih_v1` metadata SHA-256 matched its documented frozen digest, its split config matched the versioned config, and all saved split shards passed the repository validator. The default combined output root contained residue from the prior failed preflight, so the completed experiment neither overwrote nor reused it.
+
+Observed lifecycle evidence: the resulting ledger has 41 blocks and is 48,553 bytes; it validates against its anchor, contains no client sample counts, and its completed global-state hashes match all 21 global-only off-chain archives. The selected round-0 checkpoint hash matches the genesis model hash. The 20 blockchain phase records are separate from the 20 HE+DP cost records; the blockchain summary records 3.43 ms final ledger validation, while per-phase timings are in the associated CSV. This demonstrates the lifecycle gate behavior in this simulation, but does not settle the supervisor's open interpretation of Requirement 4.

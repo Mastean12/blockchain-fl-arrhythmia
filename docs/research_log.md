@@ -1,4 +1,4 @@
-﻿# Day 1 — Project setup
+# Day 1 — Project setup
 
 **Date:** 2026-10-02
 
@@ -771,3 +771,21 @@ RQ1–RQ5 are all **partially answered**: supported within the simulated, single
 The freeze is an experimentally complete prototype evaluation within its stated scope, not a research-complete study.
 
 No result from Days 6–19 was changed. Nothing was pushed.
+
+# Post-freeze extension — 2026-10-15
+
+- Added `configs/he_dp_fedavg_v1.json` and an integrated FedAvg path that clips and independently noises each client update before CKKS encryption.
+- The server-side aggregation role receives ciphertexts and has only a public CKKS context. All clients share the secret key in this single-process simulation; this is not a distributed key-management deployment.
+- Added a private, Git-ignored per-client noise-seed artifact to support controlled replay without publishing the noise values.
+- Added a synthetic end-to-end test proving both DP and HE execute in the same FL round; the test verifies accounting metadata, ciphertext activity, timing fields, and numerical error. This is integration evidence only, not MIT-BIH model utility evidence.
+- The current workspace was already missing/deleting the MIT-BIH split files, so no new real-data experiment or split validation has been run.
+- Repository/source-document inspection found no original supervisor blockchain specification. Consensus, signatures, and replication remain unresolved, and no blockchain capability beyond the already documented single-node ledger is claimed.
+- Existing frozen configurations and results were not edited. Full suite passed: 114 tests. Baseline regression and artifact integrity tests included in that run passed. The split validator could not run because `split_metadata.json` is inaccessible and reported deleted in the pre-existing workspace status.
+
+### Follow-up — recovered versioned split and measured HE+DP run
+
+- The tracked frozen split directory remained inaccessible and marked deleted in the pre-existing workspace. The raw MIT-BIH source was available, so preprocessing and split files were recreated only in the new ignored versioned roots `data/processed/mitbih_he_dp_v1/` and `data/splits/mitbih_he_dp_v1/`. The generated split metadata SHA-256 matched the committed frozen metadata exactly (`229b0db300778b0e5203b7d13537840410d52ce86752279f4e419195596831c2`), and the split validator confirmed the record/group membership. The original paths were not restored or overwritten.
+- Ran the configured three-seed `he_dp_fedavg_v1` experiment and generated measured comparison and cost/privacy tables. All seeds chose round 0; accuracy mean was 0.246760 (sample SD 0.355630), macro-F1 0.023498 (0.025377), and weighted-F1 0.179842 (0.293666). This is a poor-utility negative result, not a useful trained detector. The integrated arm matches historical DP scores because the initial round was selected; this does not establish protocol equivalence.
+- The configured accounting reports epsilon 7.979544 at delta 1e-5. Mean end-to-end time was 128.758 seconds; mean maximum CKKS absolute error per run was 8.968e-7; mean uploads plus all client downloads were 169,940,682 bytes. Exact per-run records and comparison tables are under `results/he_dp/tables/`.
+- Updated README, methodology, limitations, and integrated-protocol documentation to reflect the measured results and the unresolved blockchain-specification blocker.
+- The authoritative supervisor blockchain note remains absent from available project files. Distributed consensus/signatures/replication and the combined blockchain experiment remain unimplemented and unclaimed pending the actual requirements.

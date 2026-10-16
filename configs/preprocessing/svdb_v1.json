@@ -1,0 +1,28 @@
+{
+  "dataset": {
+    "name": "MIT-BIH Supraventricular Arrhythmia Database",
+    "version": "PhysioNet 1.0.0",
+    "physionet_path": "svdb/1.0.0",
+    "license": "Open Data Commons Attribution License v1.0",
+    "citation_doi": "10.13026/C2V30W",
+    "source_sampling_frequency_hz": 128,
+    "target_sampling_frequency_hz": 360,
+    "sampling_frequency_hz": 360,
+    "channels": 2,
+    "record_list": "RECORDS",
+    "annotation_extension": "atr",
+    "annotation_status": "reference beat and signal quality annotations; semi-automatically annotated and less extensively audited than MIT-BIH Arrhythmia Database"
+  },
+  "resampling": {"method": "scipy.signal.resample_poly", "up": 45, "down": 16, "annotation_index_rounding": "nearest_sample"},
+  "filter": {"type": "butterworth_bandpass", "low_hz": 0.5, "high_hz": 40.0, "prototype_order": 4, "method": "sosfiltfilt", "padtype": "odd"},
+  "segmentation": {"pre_seconds": 0.2, "post_seconds": 0.4, "boundary_policy": "drop_incomplete"},
+  "normalization": {"method": "per_segment_per_channel_zscore", "ddof": 0, "epsilon": 1e-8, "output_dtype": "float32"},
+  "labels": {
+    "mapping_policy": "identity for beat symbols already present in the MIT-BIH v1 label vocabulary; no source classes are merged",
+    "beat_symbols": {"N":"N","L":"L","R":"R","V":"V","/":"/","A":"A","f":"f","F":"F","j":"j","a":"a","E":"E","J":"J","Q":"Q","e":"e","S":"S"},
+    "excluded_beat_symbols": ["B", "r", "n", "?"],
+    "nonbeat_symbols": ["+", "~", "!", "\"", "x", "|", "[", "]", "(", ")", "p", "t", "u", "'", "`", "^", "s", "T", "*", "D", "="],
+    "unknown_symbol_policy": "fail; review and version a mapping update before processing"
+  },
+  "identity": {"available_patient_identifiers": false, "split_unit": "record", "group_key_template": "record_{record_id}"}
+}

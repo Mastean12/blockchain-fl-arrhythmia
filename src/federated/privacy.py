@@ -89,6 +89,54 @@ def noise_multiplier_for_epsilon(target_epsilon, delta, rounds):
     """Smallest noise multiplier whose GDP epsilon does not exceed the target."""
     return float(brentq(lambda z: gdp_epsilon(delta, gdp_mu(rounds, z)) - target_epsilon, 0.5, 1e3, xtol=1e-10))
 
+
+def he_dp_v2_account(weights, clipping_norm, noise_multiplier, rounds, delta, roster_size):
+    """Account for fixed-weight add/remove-one-client-slot Gaussian releases.
+
+    The client roster and weights are public and fixed across rounds. A missing
+    client's slot contributes zero; all other weights remain unchanged. The
+    caller must pass the configured weights verbatim: this function never
+    renormalizes them.
+    """
+    weights = np.asarray(weights, dtype=np.float64)
+    if weights.ndim != 1 or len(weights) != int(roster_size) or not len(weights):
+        raise ValueError("weights must contain exactly one entry per fixed-roster client")
+    if not np.isfinite(weights).all() or np.any(weights <= 0):
+        raise ValueError("fixed public weights must be finite and positive")
+    if abs(float(weights.sum()) - 1.0) > 1e-12:
+        raise ValueError("fixed public weights must sum to one; renormalization is forbidden")
+    clipping_norm = float(clipping_norm)
+    noise_multiplier = float(noise_multiplier)
+    delta = float(delta)
+    rounds_value = float(rounds)
+    if not math.isfinite(rounds_value) or not rounds_value.is_integer():
+        raise ValueError("rounds must be a finite integer")
+    rounds = int(rounds_value)
+    if (not math.isfinite(clipping_norm) or clipping_norm <= 0
+            or not math.isfinite(noise_multiplier) or noise_multiplier <= 0
+            or rounds < 1 or not math.isfinite(delta) or not 0 < delta < 1):
+        raise ValueError("invalid clipping, noise, rounds, or delta")
+    sensitivity = float(clipping_norm) * float(weights.max())
+    noise_std = float(noise_multiplier) * sensitivity
+    if not math.isfinite(sensitivity) or not math.isfinite(noise_std):
+        raise ValueError("clipping and noise parameters must yield finite sensitivity and noise")
+    # Independent check of the implemented Gaussian mechanism using both the
+    # exact full-participation GDP curve and a conservative RDP conversion.
+    mu = math.sqrt(int(rounds)) * sensitivity / noise_std
+    eps_gdp = gdp_epsilon(float(delta), mu)
+    eps_rdp, order = rdp_epsilon(int(rounds), noise_std / sensitivity, float(delta))
+    return {"accountant": "fixed-weight add/remove-one-client GDP; full-round composition",
+            "privacy_unit": "one participating client's complete local dataset slot",
+            "adjacency": "add/remove one client contribution; absent slot is zero; roster and weights fixed",
+            "sensitivity_l2": sensitivity, "aggregate_noise_std": noise_std,
+            "noise_multiplier": noise_std / sensitivity, "rounds": int(rounds),
+            "sampling_rate": 1.0, "epsilon": eps_gdp, "delta": float(delta),
+            "mu_gdp": mu, "rdp_epsilon_upper_bound": eps_rdp,
+            "rdp_optimal_order": order,
+            "limitations": ["full participation only", "trusted decryptor is excluded",
+                             "ideal independent Gaussian sampling", "no protection for client identity/roster",
+                             "only noised global-model transcript is covered"]}
+
 # --------------------------------------------------------------------------- configuration
 
 
@@ -189,3 +237,10 @@ def noise_generator(seed, noise_seed_offset, round_index):
     sampling (floating-point effects are not modelled).
     """
     return torch.Generator().manual_seed(int(seed) * 1_000_003 + int(noise_seed_offset) + int(round_index))
+
+
+def private_noise_generator(private_run_seed, round_index, client_index):
+    """Reproducible client-round stream; `private_run_seed` must never be public/logged."""
+    value = (int(private_run_seed) + int(round_index) * 1_000_003
+             + int(client_index) * 1_000_000_007) % (2 ** 63 - 1)
+    return torch.Generator().manual_seed(value)

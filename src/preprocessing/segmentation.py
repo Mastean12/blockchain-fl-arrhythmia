@@ -24,9 +24,10 @@ def segment_record(signal, samples, symbols, record_id, patient_group, config):
     cuts=[]; labels=[]; kept_symbols=[]; ann_kept=[]; starts=[]; ends=[]
     edge=nonbeat=0
     mapping=config.labels; nonbeats=set(config.raw["labels"]["nonbeat_symbols"])
+    excluded_beats=set(config.raw["labels"].get("excluded_beat_symbols", []))
     for pos,sym in zip(samples,symbols):
         if sym not in mapping:
-            if sym in nonbeats: nonbeat+=1; continue
+            if sym in nonbeats or sym in excluded_beats: nonbeat+=1; continue
             raise ValueError(f"Unmapped annotation symbol {sym!r} in {record_id}")
         start=int(pos)-before; end=int(pos)+after
         if start<0 or end>len(x): edge+=1; continue

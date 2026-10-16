@@ -1,0 +1,7 @@
+{
+  "random_seed": 42,
+  "target_proportions": {"train": 0.70, "validation": 0.15, "test": 0.15},
+  "assignment_unit": "record (SVDB does not publish patient identifiers)",
+  "group_count_rounding": "largest_remainder",
+  "limitations": ["Record-disjoint only; patient-disjoint evaluation cannot be established from released identifiers.", "Cross-dataset subject overlap with MIT-BIH cannot be checked."]
+}

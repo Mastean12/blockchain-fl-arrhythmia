@@ -40,6 +40,10 @@ The parameters were derived by **predeclared rules** from the honest client stat
 
 The validation split was used only by the unchanged, predefined round-selection rule (minimum validation loss). The test set was evaluated once per run.
 
+## 2.1 Literature context and limits of the candidate
+
+Coordinate-wise robust aggregation and distance-based screening predate this candidate. Yin et al. analyze coordinate-wise median and trimmed-mean distributed learning under their stated Byzantine-worker assumptions; Blanchard et al. introduce Krum; El-Mhamdi et al. introduce Bulyan and show that convergence of a robust rule alone does not guarantee an effective high-dimensional model. These methods are not interchangeable with the current cosine-to-coordinate-median plus norm-ratio screen, and the existing evaluation does not compare the candidate against them. The method therefore remains a proposed candidate assembled from established components, not a novelty claim. A source-by-source appraisal and verification links are recorded in [`literature_matrix.md`](literature_matrix.md).
+
 ## 3. Evaluation design
 
 - **Conditions:** 4 conditions (clean, plus the exact Day 17 sign flip, scaled ×10, and norm-matched noise attacks, with the same attacker clients and seeds) × 3 seeds (42, 123, 2024), giving 12 defended runs.
@@ -112,6 +116,12 @@ The final-round FedAvg validation values come from the Day 11 clean histories. N
 5. Hard rejection of one in five clients removes 15–22% of the data each round. With multiple honest-but-unusual clients this could hurt minority classes held by few clients (Day 11: `/` and `L` are on only 2 clients).
 6. Not combined with DP, HE, or blockchain. Robust screening conflicts with HE confidentiality and interacts with DP noise.
 7. Inherited limitations: a simulation on public data, a weak and collapsed clean baseline (macro-F1 about 0.085), and a 7-record test set.
+
+## 6.1 Added edge-case characterization (no historical experiment changed)
+
+Focused unit tests now exercise finite-input checks, zero updates, extreme finite parameter magnitudes, and a same-norm orthogonal update. A zero update has no defined cosine direction and is not rejected by the cosine filter; norm screening remains active. Non-finite model values, non-finite sample counts, and non-finite defense thresholds are rejected before aggregation. A constructed benign orthogonal shift is flagged by the fixed cosine rule despite having a normal norm ratio: this demonstrates a possible false positive, not a measured rate under real non-IID ECG clients.
+
+A BatchNorm-buffer-only poisoning example is not screened by the trainable-parameter direction/norm rules when the robust-BatchNorm component is disabled; the FedAvg-style weighted buffer mean can become negative. The full candidate uses coordinate-wise medians for accepted BatchNorm statistics, but this edge case does not validate that component under multiple or adaptive attackers. Existing attack evidence covers sign-flip, scaling, and norm-matched Gaussian directions in a single simulated partition. Natural site heterogeneity, adaptive attacks, and the false-positive rate under external-client shifts remain **OUTSTANDING** and require a predeclared study design; the new tests do not change or replace frozen runs.
 
 ## 7. Integrity
 

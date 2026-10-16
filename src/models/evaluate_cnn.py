@@ -1,5 +1,6 @@
 """Evaluate a saved centralized CNN using only one explicit test directory."""
 import csv
+import hashlib
 import json
 from pathlib import Path
 
@@ -223,8 +224,6 @@ def _save_outputs(result, dataset, y_true, y_pred, probabilities, class_names, o
         "checkpoint_best_validation_loss_epoch": None,
         "test_data_used_for_training_or_model_selection": False,
     }
-    metadata_path = Path(root) / "models" / "centralized_cnn_v1.pt"
-    summary["checkpoint_path"] = str(metadata_path)
     (metrics_dir / "baseline_metrics.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     np.savez_compressed(metrics_dir / "baseline_test_predictions.npz",
                         y_true=y_true, y_pred=y_pred, probabilities=probabilities,
@@ -268,6 +267,9 @@ def evaluate_checkpoint(checkpoint_path="results/models/centralized_cnn_v1.pt",
     result = calculate_metrics(y_true, y_pred, probabilities, class_names)
     summary = _save_outputs(result, dataset, y_true, y_pred, probabilities, class_names, output_root)
     summary["checkpoint_best_validation_loss_epoch"] = checkpoint["best_epoch_by_validation_loss"]
+    checkpoint_file = Path(checkpoint_path)
+    summary["checkpoint_path"] = str(checkpoint_file)
+    summary["checkpoint_sha256"] = hashlib.sha256(checkpoint_file.read_bytes()).hexdigest()
     metrics_path = Path(output_root) / "metrics" / "baseline_metrics.json"
     metrics_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     summary["per_class"] = result["per_class"]

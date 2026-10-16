@@ -34,13 +34,14 @@ The defense runs entirely on the server, adds no client-side computation and no
 communication, and uses only quantities the server already receives in FedAvg.
 """
 from collections import OrderedDict
+import math
 import time
 
 import numpy as np
 import torch
 from torch import nn
 
-from .fedavg import fedavg_aggregate
+from .fedavg import check_state_compatibility, fedavg_aggregate
 
 REQUIRED = {"enabled", "name", "mode", "clipping_norm", "cosine_threshold", "norm_ratio_threshold",
             "bn_variance_floor", "reference_direction", "bn_running_stats"}
@@ -62,11 +63,16 @@ def validate_defense_config(defense):
         raise ValueError("defense.enabled must be true when a defense section is present")
     if defense["mode"] not in {"defend", "observe"}:
         raise ValueError("defense.mode must be 'defend' or 'observe'")
-    if not float(defense["clipping_norm"]) > 0 or not float(defense["norm_ratio_threshold"]) > 1:
+    clipping_norm = float(defense["clipping_norm"])
+    norm_ratio_threshold = float(defense["norm_ratio_threshold"])
+    cosine_threshold = float(defense["cosine_threshold"])
+    bn_variance_floor = float(defense["bn_variance_floor"])
+    if (not math.isfinite(clipping_norm) or not clipping_norm > 0
+            or not math.isfinite(norm_ratio_threshold) or not norm_ratio_threshold > 1):
         raise ValueError("clipping_norm must be > 0 and norm_ratio_threshold > 1")
-    if not -1 <= float(defense["cosine_threshold"]) < 1:
+    if not math.isfinite(cosine_threshold) or not -1 <= cosine_threshold < 1:
         raise ValueError("cosine_threshold must be in [-1, 1)")
-    if not float(defense["bn_variance_floor"]) > 0:
+    if not math.isfinite(bn_variance_floor) or not bn_variance_floor > 0:
         raise ValueError("bn_variance_floor must be positive")
     if defense["reference_direction"] != "coordinate_wise_median":
         raise ValueError("Only the coordinate-wise median reference direction is implemented")
@@ -108,8 +114,19 @@ def robust_aggregate(global_state, client_states, sample_counts, defense, keys, 
     """Return (new_global_state, per_client_rows, round_summary)."""
     trainable, running, integer = keys
     counts = np.asarray(sample_counts, dtype=np.float64)
-    if not client_states or len(client_states) != len(counts) or np.any(counts <= 0):
+    if (not client_states or len(client_states) != len(counts)
+            or not np.isfinite(counts).all() or np.any(counts <= 0)):
         raise ValueError("Need one positive sample count per client state")
+    if client_ids is not None and (len(client_ids) != len(client_states)
+                                   or len(set(client_ids)) != len(client_ids)):
+        raise ValueError("client_ids must be unique and match the client-state count")
+    for state in [global_state, *client_states]:
+        if any(not torch.is_tensor(value) for value in state.values()):
+            raise ValueError("model states must contain only tensors")
+        check_state_compatibility(global_state, state)
+        if any(value.is_floating_point() and not torch.isfinite(value).all()
+               for value in state.values()):
+            raise ValueError("model states must contain finite floating-point values")
     t0 = time.perf_counter()
     switch = components(defense)
     prior = counts / counts.sum()
@@ -124,7 +141,11 @@ def robust_aggregate(global_state, client_states, sample_counts, defense, keys, 
     cosines = np.array([_cos(u, median_direction) for u in updates])
     median_norm = float(norms.median())
     ratios = (norms / max(median_norm, 1e-12)).numpy()
-    low_cos = cosines < float(defense["cosine_threshold"])
+    # A zero update has no direction to compare; do not reject it on an
+    # undefined cosine. Likewise, skip cosine screening if the reference is zero.
+    reference_has_direction = bool(torch.linalg.vector_norm(median_direction) > 0)
+    has_direction = norms.numpy() > 0
+    low_cos = has_direction & reference_has_direction & (cosines < float(defense["cosine_threshold"]))
     high_norm = ratios > float(defense["norm_ratio_threshold"])
     flagged = (low_cos & switch["cosine_filter"]) | (high_norm & switch["norm_filter"])
     accepted = ~flagged

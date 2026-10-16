@@ -1,0 +1,53 @@
+{
+  "robustness_id": "he_dp_fedavg_v1",
+  "study_title": "Integrated client-level DP + CKKS FedAvg (v1)",
+  "base_config": "configs/federated/fedavg_v1.json",
+  "seeds": [42, 123, 2024],
+  "seed_controls": ["training_seed", "partition_seed", "private per-client Gaussian noise seeds"],
+  "seed_note": "Training and partition seeds are public. Independent noise seeds are generated from OS entropy and stored only in results/he_dp/private/ for controlled reruns; do not publish those seeds.",
+  "primary_partition": "random_group_equal_count",
+  "diagnostic_partitions": [],
+  "run_id_template": "he_dp_fedavg_v1_{partition_label}_s{seed}",
+  "partition_labels": {"random_group_equal_count": "natural"},
+  "extra_overrides": {
+    "data": {"split_root": "data/splits/mitbih_he_dp_v1"},
+    "privacy": {
+      "enabled": true,
+      "mechanism": "client-level Gaussian mechanism on each client's clipped update before encryption",
+      "privacy_unit": "client",
+      "privacy_unit_description": "All training data of one simulated client; add/remove-one-client adjacency with fixed public sample weights",
+      "clip_scope": "All floating-point model-state update entries; integer BatchNorm counters are a public function of sample counts",
+      "clipping_norm": 1.0,
+      "noise_multiplier": 2.69,
+      "noise_placement": "client_before_encryption",
+      "noise_distribution": "independent Gaussian per client and round; entropy-seeded generator with private seed artifact",
+      "noise_calibration": "client k uses std z*C*max(p)/p_k, so its weighted noise contribution alone has std z*C*max(p)",
+      "target_epsilon": 8.0,
+      "delta": 1e-05,
+      "accountant": "gdp_full_participation",
+      "accountant_description": "For every client release, sensitivity is at most C and Gaussian standard deviation is at least z*C; T rounds compose by mu-GDP with mu=sqrt(T)/z. No subsampling amplification is claimed.",
+      "client_sampling_rate": 1.0,
+      "rounds": 20,
+      "noise_seed_offset": 7919
+    },
+    "homomorphic_encryption": {
+      "enabled": true,
+      "scheme": "CKKS",
+      "library": "tenseal",
+      "library_version": "0.3.18",
+      "poly_modulus_degree": 8192,
+      "coeff_mod_bit_sizes": [60, 40, 40, 60],
+      "global_scale_bits": 40,
+      "security_level_bits": 128,
+      "security_basis": "Total coefficient modulus 200 bits <= 218 bits allowed for N=8192 at 128-bit classical security (Microsoft SEAL parameter check)",
+      "encrypted_quantity": "clipped_noisy_client_update",
+      "aggregation": "sample_weighted_fedavg",
+      "server_operations": "public-weight scalar multiplication and ciphertext addition; no secret key",
+      "key_model": "shared client key in a single-process simulation; server has public context only",
+      "noise_placement": "client_before_encryption",
+      "correctness_tolerance": "max |decrypted noisy aggregate - exact weighted noisy aggregate| <= 1e-5 * max(1, max |exact aggregate|)"
+    }
+  },
+  "output_root": "results/he_dp",
+  "scope_note": "New experiment only; does not overwrite frozen HE, DP, FedAvg, or final results."
+}

@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from src.blockchain.benchmark import build_ledger, fixed_clock, synthetic_hash
+from src.blockchain.anchor_tool import export_anchor, verify_anchor
 from src.blockchain.ledger import (GENESIS_PREVIOUS_HASH, Ledger, ValidationError, canonical_json, hash_payload,
                                    sha256_hex)
 from src.blockchain import tamper
@@ -35,6 +36,28 @@ class HashingAndDeterminismTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             hash_payload("not bytes")
 
+    def test_anchor_export_is_non_overwriting_and_detects_rewritten_chain(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ledger = build_ledger(2, 5, 42)
+            ledger_path = root / "ledger.jsonl"
+            anchor_path = root / "external" / "anchor.json"
+            ledger.save(ledger_path)
+
+            exported = export_anchor(ledger_path, anchor_path)
+            self.assertEqual(exported, ledger.anchor())
+            self.assertEqual(verify_anchor(ledger_path, anchor_path), (True, []))
+            with self.assertRaises(FileExistsError):
+                export_anchor(ledger_path, anchor_path)
+
+            rewritten = Ledger.load(ledger_path)
+            rewritten.blocks[-1].metadata["rewritten"] = True
+            rewritten.blocks[-1].block_hash = rewritten.blocks[-1].compute_hash()
+            rewritten.save(ledger_path)
+            valid, problems = verify_anchor(ledger_path, anchor_path)
+            self.assertFalse(valid)
+            self.assertTrue(any("anchor:" in problem for problem in problems))
+
     def test_same_inputs_and_clock_give_identical_pinned_hashes(self):
         a, b = build_ledger(2, 5, 42), build_ledger(2, 5, 42)
         self.assertEqual([x.block_hash for x in a.blocks], [x.block_hash for x in b.blocks])
@@ -61,6 +84,16 @@ class BlockCreationAndValidationTests(unittest.TestCase):
         self.ledger.append_round(3, _participants(3), synthetic_hash("agg", 3))
         with self.assertRaises(ValidationError):
             self.ledger.append_round(3, _participants(3), synthetic_hash("agg", 3))
+
+    def test_malformed_metadata_and_invalid_phase_fail_structured_validation(self):
+        with self.assertRaisesRegex(ValidationError, "phase must be"):
+            self.ledger.append_round(1, _participants(1), synthetic_hash("agg", 1),
+                                     metadata={"phase": "unknown"})
+        block = self.ledger.append_round(1, _participants(1), synthetic_hash("agg", 1))
+        block.metadata = ["malformed"]
+        valid, problems = self.ledger.validate()
+        self.assertFalse(valid)
+        self.assertTrue(any("metadata must be a dict" in problem for problem in problems))
 
     def test_schema_keeps_data_and_parameters_off_chain(self):
         bad_cases = [

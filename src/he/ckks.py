@@ -75,6 +75,14 @@ class CKKSSession:
     def chunks(self, length):
         return math.ceil(length / self.params.slots)
 
+    def server_view(self):
+        """Create an aggregation-only role object containing no reference to the secret context."""
+        return CKKSServer(self.public_context_bytes)
+
+    def client_encryptor(self):
+        """Return a public-key-only encryption view for simulated clients."""
+        return CKKSClient(self.public_context_bytes, self.params.slots)
+
     # ------------------------------------------------------------------ key holders (clients)
     def encrypt(self, vector):
         """Encrypt a flat float vector into serialized CKKS ciphertext chunks."""
@@ -95,6 +103,19 @@ class CKKSSession:
     # ------------------------------------------------------------------ server (public context only)
     def aggregate(self, client_chunks, weights):
         """Server side: sum_k weights[k] * Enc(x_k), chunk by chunk, without the secret key."""
+        return self.server_view().aggregate(client_chunks, weights)
+
+
+class CKKSServer:
+    """Aggregation role with public parameters only; intentionally has no decrypt method."""
+
+    def __init__(self, public_context_bytes):
+        self.public_context = ts.context_from(public_context_bytes)
+        if self.public_context.has_secret_key():
+            raise RuntimeError("Server context must not contain the secret key")
+
+    def aggregate(self, client_chunks, weights):
+        """Compute a weighted ciphertext sum using public weights only."""
         if not client_chunks or len(client_chunks) != len(weights):
             raise ValueError("Need one weight per client")
         n_chunks = len(client_chunks[0])
@@ -104,10 +125,26 @@ class CKKSSession:
         for j in range(n_chunks):
             total = None
             for blob, weight in zip((c[j] for c in client_chunks), weights):
-                term = ts.ckks_vector_from(self.server_context, blob) * float(weight)
+                term = ts.ckks_vector_from(self.public_context, blob) * float(weight)
                 total = term if total is None else total + term
             result.append(total.serialize())
         return result
+
+
+class CKKSClient:
+    """Client encryption view; contains public CKKS material and no secret key."""
+
+    def __init__(self, public_context_bytes, slots):
+        self.public_context = ts.context_from(public_context_bytes)
+        if self.public_context.has_secret_key():
+            raise RuntimeError("Client encryption view must not contain the secret key")
+        self.slots = int(slots)
+
+    def encrypt(self, vector):
+        vector = np.asarray(vector, dtype=np.float64)
+        slots = self.slots
+        return [ts.ckks_vector(self.public_context, vector[i:i + slots].tolist()).serialize()
+                for i in range(0, len(vector), slots)]
 
 
 def encrypted_weighted_average(session, vectors, weights):

@@ -132,7 +132,7 @@ class HEFedAvgIntegrationTests(unittest.TestCase):
             he.pop("homomorphic_encryption")
             self.assertEqual(he, plain)
 
-    def test_he_cannot_be_combined_with_dp(self):
+    def test_he_dp_rejects_implicit_unvalidated_noise_protocol(self):
         dp = json.loads((ROOT / "configs/privacy/dp_fedavg_v1.json").read_text(encoding="utf-8"))["extra_overrides"]
         he = json.loads(STUDY.read_text(encoding="utf-8"))["extra_overrides"]
         with self.assertRaises(ValueError):

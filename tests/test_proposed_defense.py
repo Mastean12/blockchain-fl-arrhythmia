@@ -119,6 +119,56 @@ class ScreeningTests(unittest.TestCase):
         self.assertTrue(all(r["defended_weight"] == 0.0 for r in rows))
         self.assertTrue(all(torch.isfinite(v).all() for v in out.values() if v.is_floating_point()))
 
+    def test_zero_updates_are_not_rejected_for_undefined_cosine(self):
+        global_state, _, keys = _honest_clients()
+        clients = [copy.deepcopy(global_state) for _ in range(5)]
+        out, rows, summary = robust_aggregate(global_state, clients, [1] * 5, DEFENSE, keys)
+        self.assertEqual(summary["accepted_clients"], 5)
+        self.assertFalse(any(row["flagged"] for row in rows))
+        for key in global_state:
+            self.assertTrue(torch.equal(out[key], global_state[key]))
+
+    def test_benign_orthogonal_shift_can_be_a_false_positive(self):
+        global_state, _, keys = _honest_clients()
+        clients = [copy.deepcopy(global_state) for _ in range(5)]
+        first, second = keys[0][:2]
+        for client in clients[:4]:
+            client[first].view(-1)[0] += 1.0
+        clients[4][second].view(-1)[0] += 1.0
+
+        _, rows, _ = robust_aggregate(global_state, clients, [1] * 5, DEFENSE, keys)
+        self.assertTrue(rows[4]["flag_low_cosine"])
+        self.assertEqual(sum(row["flagged"] for row in rows), 1)
+        self.assertEqual(rows[4]["norm_ratio_to_median"], 1.0)
+
+    def test_extreme_finite_update_is_screened_and_remains_numerically_finite(self):
+        global_state, clients, keys = _honest_clients()
+        attacker = copy.deepcopy(clients[2])
+        key = keys[0][0]
+        attacker[key].view(-1)[0] = global_state[key].view(-1)[0] + 1e30
+        clients[2] = attacker
+
+        out, rows, _ = robust_aggregate(global_state, clients, [1] * 5, DEFENSE, keys)
+        self.assertTrue(rows[2]["flag_high_norm"])
+        self.assertTrue(all(torch.isfinite(value).all() for value in out.values() if value.is_floating_point()))
+
+    def test_non_finite_client_update_is_rejected_before_aggregation(self):
+        global_state, clients, keys = _honest_clients()
+        clients[0][keys[0][0]].view(-1)[0] = float("nan")
+        with self.assertRaisesRegex(ValueError, "finite floating-point"):
+            robust_aggregate(global_state, clients, [1] * 5, DEFENSE, keys)
+
+    def test_bn_only_poisoning_is_not_screened_when_bn_median_is_disabled(self):
+        global_state, clients, keys = _honest_clients()
+        clients[0]["features.1.running_var"] = torch.full_like(
+            clients[0]["features.1.running_var"], -1e6
+        )
+        ablation = {**DEFENSE, "components": {"robust_bn_stats": False}}
+
+        out, rows, _ = robust_aggregate(global_state, clients, [1] * 5, ablation, keys)
+        self.assertFalse(rows[0]["flagged"])
+        self.assertLess(float(out["features.1.running_var"].min()), 0.0)
+
     def test_deterministic(self):
         global_state, clients, keys = _honest_clients()
         a = robust_aggregate(global_state, clients, [1] * 5, DEFENSE, keys)
@@ -131,9 +181,20 @@ class ConfigTests(unittest.TestCase):
     def test_validation(self):
         validate_defense_config(DEFENSE)
         for change in ({"mode": "x"}, {"clipping_norm": 0}, {"norm_ratio_threshold": 1.0}, {"cosine_threshold": 1.0},
-                       {"bn_variance_floor": 0}, {"reference_direction": "mean"}, {"enabled": False}):
+                       {"bn_variance_floor": 0}, {"reference_direction": "mean"}, {"enabled": False},
+                       {"clipping_norm": float("nan")}, {"norm_ratio_threshold": float("inf")},
+                       {"cosine_threshold": float("nan")}, {"bn_variance_floor": float("inf")}):
             with self.assertRaises(ValueError, msg=str(change)):
                 validate_defense_config({**DEFENSE, **change})
+
+    def test_non_finite_or_misaligned_counts_and_client_ids_are_rejected(self):
+        global_state, clients, keys = _honest_clients()
+        for counts in ([1, 1, 1, 1, float("nan")], [1, 1, 1, 1, float("inf")]):
+            with self.assertRaisesRegex(ValueError, "positive sample count"):
+                robust_aggregate(global_state, clients, counts, DEFENSE, keys)
+        with self.assertRaisesRegex(ValueError, "client_ids"):
+            robust_aggregate(global_state, clients, [1] * 5, DEFENSE, keys,
+                             client_ids=["same"] * 5)
 
     def test_frozen_config_if_present(self):
         path = ROOT / "configs/proposed/robust_defense_v1.json"

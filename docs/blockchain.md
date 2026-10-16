@@ -15,7 +15,7 @@
 
 - **What it is:** a tamper-evident log. Each block commits to its content and to the previous block's hash, so any inconsistent change is detected by re-validation.
 - **What it is not:** a distributed blockchain. There is **no consensus protocol, no replication across nodes, no permissioned membership, and no digital signatures**. It does not provide Byzantine fault tolerance or non-repudiation.
-- **Its central limitation:** a single party with write access can rewrite the whole chain and recompute every hash, or silently drop the newest blocks. Such changes are detectable only against an **independently stored anchor** (the expected length and tip hash; §4). The prototype provides and measures anchoring. Making the anchor trustworthy (replication across institutions, signatures, a permissioned network) is future work for the actual blockchain layer (RQ4).
+- **Its central limitation:** a single party with write access can rewrite the whole chain and recompute every hash, or silently drop the newest blocks. Such changes are detectable only against an **independently stored anchor** (the expected length and tip hash; §4). The validator accepts an anchor supplied out of band, and synthetic tamper tests exercise that API; this does not establish independent custody of saved experiment anchors. In the preserved combined HE+DP v2 run the anchor is stored beside the ledger in the same result tree, so an attacker who can rewrite both can defeat the check. Making anchors trustworthy is an open operational requirement; consensus, replication, and signatures remain unimplemented.
 
 ## 2. Block structure
 

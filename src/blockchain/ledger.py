@@ -3,15 +3,17 @@
 Block structure
 ---------------
 index -> previous_hash -> timestamp -> round -> experiment_id -> participants
-(client_id, num_samples, update_hash) -> aggregation_hash -> metadata -> block_hash
+(client_id, num_samples, update_hash) or
+(client_id, update_hash, fixed public weight) -> aggregation_hash -> metadata -> block_hash
 
 ``block_hash = SHA-256(canonical_json(block without block_hash))``. Canonical JSON
 uses sorted keys, compact separators, ASCII escaping, and rejects NaN/Infinity, so
 the same content always hashes to the same value.
 
-Only hashes and small scalar metadata are stored. Schema limits reject large or
-nested values, so ECG data, model parameters, and (encrypted) updates cannot be
-placed on-chain through this API.
+Only hashes and small scalar metadata are stored. The HE+DP v2 schema commits
+public aggregation weights instead of client sample counts. Schema limits reject
+large or nested values, so ECG data, model parameters, and (encrypted) updates
+cannot be placed on-chain through this API.
 
 What validation can and cannot detect
 -------------------------------------
@@ -121,23 +123,47 @@ class Ledger:
             datetime.fromisoformat(block.timestamp)
         except (TypeError, ValueError) as exc:
             raise ValidationError("timestamp must be ISO-8601") from exc
+        if not isinstance(block.metadata, dict):
+            raise ValidationError("metadata must be a dict")
+        phase = block.metadata.get("phase")
+        if phase not in (None, "prepared", "complete"):
+            raise ValidationError("phase must be absent, 'prepared', or 'complete'")
         if not isinstance(block.participants, list) or len(block.participants) > limits["max_participants"]:
             raise ValidationError("participants must be a list within the size limit")
         ids = []
         for record in block.participants:
-            if not isinstance(record, dict) or set(record) != {"client_id", "num_samples", "update_hash"}:
-                raise ValidationError("participant records must have exactly client_id, num_samples, update_hash")
+            if not isinstance(record, dict):
+                raise ValidationError("participant records must be dicts")
+            fields = set(record)
+            if fields not in ({"client_id", "num_samples", "update_hash"},
+                              {"client_id", "update_hash", "weight"}):
+                raise ValidationError("participant records must use sample-count or fixed-public-weight schema")
             if not isinstance(record["client_id"], str) or not 0 < len(record["client_id"]) <= limits["max_client_id_chars"]:
                 raise ValidationError("client_id must be a short non-empty string")
-            if not isinstance(record["num_samples"], int) or isinstance(record["num_samples"], bool) or record["num_samples"] < 0:
-                raise ValidationError("num_samples must be a non-negative integer")
             if not isinstance(record["update_hash"], str) or not HEX64.match(record["update_hash"]):
                 raise ValidationError("update_hash must be a SHA-256 hex digest")
+            if set(record) == {"client_id", "num_samples", "update_hash"}:
+                if (not isinstance(record["num_samples"], int) or isinstance(record["num_samples"], bool)
+                        or record["num_samples"] < 0):
+                    raise ValidationError("num_samples must be a non-negative integer")
+            elif set(record) == {"client_id", "update_hash", "weight"}:
+                if (not isinstance(record["weight"], (int, float)) or isinstance(record["weight"], bool)
+                        or not math.isfinite(record["weight"]) or record["weight"] <= 0):
+                    raise ValidationError("public aggregation weights must be finite positive numbers")
+            else:
+                raise ValidationError("participant records must use sample-count or fixed-public-weight schema")
             ids.append(record["client_id"])
         if ids != sorted(ids) or len(ids) != len(set(ids)):
             raise ValidationError("participants must be sorted by client_id without duplicates")
-        if not isinstance(block.metadata, dict):
-            raise ValidationError("metadata must be a dict")
+        fixed_weight_records = [set(record) == {"client_id", "update_hash", "weight"}
+                                for record in block.participants]
+        if block.metadata.get("commitment_format") == "fixed_public_weight":
+            if block.participants and not all(fixed_weight_records):
+                raise ValidationError("fixed-public-weight commitments cannot contain sample counts")
+            if abs(sum(float(record["weight"]) for record in block.participants) - 1.0) > 1e-12:
+                raise ValidationError("fixed public aggregation weights must sum to one")
+        elif any(fixed_weight_records):
+            raise ValidationError("fixed-public-weight participants require commitment_format metadata")
         for key, value in block.metadata.items():
             if not isinstance(key, str):
                 raise ValidationError("metadata keys must be strings")
@@ -170,13 +196,40 @@ class Ledger:
                       metadata=dict(metadata or {}))
         return self._seal_and_append(block)
 
+    def append_round_prepare(self, round_number, participants, previous_model_hash, metadata=None):
+        """Commit submitted update hashes before the FL aggregation operation."""
+        tip = self.blocks[-1]
+        if round_number <= tip.round:
+            raise ValidationError(f"round {round_number} must exceed the previous round {tip.round}")
+        records = sorted((dict(p) for p in participants), key=lambda r: str(r["client_id"]))
+        block = Block(index=tip.index + 1, previous_hash=tip.block_hash, timestamp=self.clock(),
+                      round=int(round_number), experiment_id=tip.experiment_id, participants=records,
+                      aggregation_hash=previous_model_hash,
+                      metadata={**dict(metadata or {}), "phase": "prepared"})
+        return self._seal_and_append(block)
+
+    def append_round_complete(self, round_number, participants, aggregate_hash, metadata=None):
+        """Finalize a prepared round with the resulting global-model hash."""
+        tip = self.blocks[-1]
+        phase = tip.metadata.get("phase") if isinstance(tip.metadata, dict) else None
+        if tip.round != round_number or phase != "prepared":
+            raise ValidationError("round completion requires its immediately preceding prepared block")
+        records = sorted((dict(p) for p in participants), key=lambda r: str(r["client_id"]))
+        if records != tip.participants:
+            raise ValidationError("completed participant commitments differ from prepared commitments")
+        block = Block(index=tip.index + 1, previous_hash=tip.block_hash, timestamp=self.clock(),
+                      round=int(round_number), experiment_id=tip.experiment_id, participants=records,
+                      aggregation_hash=aggregate_hash,
+                      metadata={**dict(metadata or {}), "phase": "complete"})
+        return self._seal_and_append(block)
+
     # ------------------------------------------------------------------ verification
     def anchor(self):
         """Externally storable commitment to the current chain state."""
         return {"ledger_id": self.ledger_id, "length": len(self.blocks), "tip_hash": self.blocks[-1].block_hash}
 
-    def validate(self, anchor=None):
-        """Return (ok, list_of_problems). Checks every block; `anchor` adds length/tip checks."""
+    def validate(self, anchor=None, *, allow_pending_prepared=False):
+        """Return (ok, problems); optionally allow a valid prepared tip during aggregation."""
         problems = []
         if not self.blocks:
             return False, ["empty chain"]
@@ -197,12 +250,30 @@ class Ledger:
             if position == 0:
                 if block.previous_hash != GENESIS_PREVIOUS_HASH or block.round != 0 or block.participants:
                     problems.append("genesis block malformed")
+                if isinstance(block.metadata, dict) and block.metadata.get("phase") is not None:
+                    problems.append("genesis block cannot have a lifecycle phase")
                 continue
             previous = self.blocks[position - 1]
             if block.previous_hash != previous.block_hash:
                 problems.append(f"block {position}: previous_hash does not link to block {position - 1}")
-            if block.round <= previous.round:
-                problems.append(f"block {position}: round {block.round} not after {previous.round}")
+            previous_phase = (previous.metadata.get("phase")
+                              if isinstance(previous.metadata, dict) else None)
+            phase = block.metadata.get("phase") if isinstance(block.metadata, dict) else None
+            if phase == "prepared":
+                if block.round != previous.round + 1:
+                    problems.append(f"block {position}: prepared round must immediately follow round {previous.round}")
+                if previous_phase == "prepared":
+                    problems.append(f"block {position}: prepared round {previous.round} was not completed")
+            elif phase == "complete":
+                if previous_phase != "prepared" or block.round != previous.round:
+                    problems.append(f"block {position}: completed round has no immediately preceding prepared block")
+                elif block.participants != previous.participants:
+                    problems.append(f"block {position}: completion participants differ from prepared commitments")
+            else:
+                if previous_phase == "prepared":
+                    problems.append(f"block {position}: prepared round {previous.round} was not completed")
+                if block.round <= previous.round:
+                    problems.append(f"block {position}: round {block.round} not after {previous.round}")
             try:
                 if datetime.fromisoformat(block.timestamp) < datetime.fromisoformat(previous.timestamp):
                     problems.append(f"block {position}: timestamp earlier than block {position - 1}")
@@ -210,6 +281,9 @@ class Ledger:
                 pass  # already reported by the schema check
             if block.experiment_id != previous.experiment_id:
                 problems.append(f"block {position}: experiment_id changed")
+        if (not allow_pending_prepared and isinstance(self.blocks[-1].metadata, dict)
+                and self.blocks[-1].metadata.get("phase") == "prepared"):
+            problems.append(f"prepared round {self.blocks[-1].round} was never completed")
         if anchor is not None:
             if anchor.get("ledger_id") != self.ledger_id:
                 problems.append("anchor: ledger_id mismatch")
@@ -222,7 +296,8 @@ class Ledger:
     def verify_update(self, round_number, client_id, payload):
         """True if SHA-256(payload) equals the update hash recorded for that client in that round."""
         for block in self.blocks:
-            if block.round == round_number:
+            phase = block.metadata.get("phase") if isinstance(block.metadata, dict) else None
+            if block.round == round_number and phase != "complete":
                 for record in block.participants:
                     if record["client_id"] == client_id:
                         return record["update_hash"] == hash_payload(payload)
@@ -231,7 +306,8 @@ class Ledger:
 
     def verify_aggregate(self, round_number, payload):
         for block in self.blocks:
-            if block.round == round_number:
+            phase = block.metadata.get("phase") if isinstance(block.metadata, dict) else None
+            if block.round == round_number and phase != "prepared":
                 return block.aggregation_hash == hash_payload(payload)
         return False
 

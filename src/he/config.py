@@ -12,8 +12,8 @@ def validate_he_config(he):
         raise ValueError("homomorphic_encryption.enabled must be true when the section is present")
     if he["scheme"] != "CKKS" or he["library"] != "tenseal":
         raise ValueError("Only CKKS via TenSEAL is implemented")
-    if he["encrypted_quantity"] != "client_update":
-        raise ValueError("encrypted_quantity must be 'client_update'")
-    if he["aggregation"] != "sample_weighted_fedavg":
-        raise ValueError("HE aggregation must reproduce sample-weighted FedAvg")
+    if he["encrypted_quantity"] not in {"client_update", "clipped_noisy_client_update", "clipped_client_update"}:
+        raise ValueError("encrypted_quantity must identify a client update (plain or clipped/noisy)")
+    if he["aggregation"] not in {"sample_weighted_fedavg", "fixed_public_weighted_fedavg"}:
+        raise ValueError("Unsupported HE aggregation weighting")
     return CKKSParameters.from_config(he)

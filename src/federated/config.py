@@ -29,8 +29,11 @@ def load_federated_config(path):
         raise ValueError("participation.fraction must be in (0, 1]")
     if config["aggregation"]["method"] != "FedAvg":
         raise ValueError("Only FedAvg aggregation is implemented")
-    if config["aggregation"]["weighting"] != "client_training_samples":
-        raise ValueError("FedAvg weighting must be 'client_training_samples'")
+    allowed_weighting = {"client_training_samples"}
+    if config.get("privacy", {}).get("protocol") == "he_dp_v2_aggregate_noise":
+        allowed_weighting.add("fixed_public")
+    if config["aggregation"]["weighting"] not in allowed_weighting:
+        raise ValueError(f"FedAvg weighting must be one of {sorted(allowed_weighting)}")
     if config["aggregation"].get("batchnorm", "aggregate") not in {"aggregate", "local"}:
         raise ValueError("aggregation.batchnorm must be 'aggregate' (FedAvg) or 'local' (FedBN-style)")
     if config["model_selection"]["split"] != "validation":

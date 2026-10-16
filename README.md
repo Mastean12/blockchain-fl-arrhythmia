@@ -4,10 +4,12 @@
 
 | | |
 |---|---|
-| **Status** | Research freeze, 2026-10-05. All planned experiments are complete; results are frozen. |
-| **Scope** | A simulated 5-client federation on one public dataset (MIT-BIH v1.0.0), run on one CPU machine |
-| **Evidence** | 26 research documents, each experiment's frozen configuration, 110 automated tests, and SHA-256 hashes of key artifacts |
+| **Status** | Historical study frozen 2026-10-05; versioned extensions are evaluated separately. |
+| **Scope** | Simulated 5-client MIT-BIH training plus frozen external evaluation on SVDB; CPU research prototype |
+| **Evidence** | Frozen study plus documented SVDB external evaluation, integrated HE+DP v1/v2, and a lifecycle-gated single-node ledger extension; see the requirement matrix for current evidence status. |
 | **Not shown** | Clinical usefulness, diagnostic validity, statistical significance, or generalization beyond MIT-BIH |
+
+**Post-freeze extensions:** preserve the v1 HE+DP three-seed experiment and its round-0 failure in [`docs/he_dp_integration.md`](docs/he_dp_integration.md). The separate v2 design and measured combined HE+DP v2 + lifecycle-gate run are documented in [`docs/he_dp_v2_protocol.md`](docs/he_dp_v2_protocol.md) and [`docs/blockchain_fl_integration.md`](docs/blockchain_fl_integration.md); the accountant is conditional on a trusted decryptor and ideal Gaussian draws, and the simulation does not enforce role isolation. The ledger is a single-node, single-process hash chain with no consensus, signatures, or replication. SVDB's frozen external evaluation and recovered split provenance are documented in [`docs/svdb_integration.md`](docs/svdb_integration.md). The seven-requirement evidence checklist is in [`docs/final_submission_report.md`](docs/final_submission_report.md); supervisor Requirement 4's intended blockchain role remains open.
 
 ---
 
@@ -40,7 +42,7 @@ Hospitals hold ECG data that could train better arrhythmia detectors, but privac
 
 ## 2. What the study does
 
-Every component was tested as a **one-factor experiment**: one change at a time, against a matched baseline, with predeclared seeds, and with the test set evaluated once per run. The components were **not** combined into one integrated system.
+The original Day 20 study tested its components as **one-factor experiments**: one change at a time, against a matched baseline. A post-freeze run later combined the existing HE+DP v2 protocol with the lifecycle-gated ledger; it did not integrate the proposed defense and remains subject to the trust and scope limitations in the extension reports.
 
 ```text
                  MIT-BIH (48 records) -> filter -> beat windows -> 15 beat classes
@@ -81,7 +83,7 @@ Every component was tested as a **one-factor experiment**: one change at a time,
 
 ## 4. Results
 
-All numbers are held-out test results with each test set evaluated **once**, typically over 3 seeds. They are **descriptive**: no significance tests were run. The full tables are in [`docs/final_results.md`](docs/final_results.md) and [`results/final/`](results/final/).
+Numbers are held-out test results and are **descriptive**: no significance tests were run. Most historical comparisons use 3 seeds; the combined HE+DP v2 run and SVDB external evaluation are single fixed-split runs. The SVDB checkpoint evaluation was reproduced once from a recovered copy of the same test membership to verify provenance, not to tune. The full tables and qualifications are in [`docs/final_results.md`](docs/final_results.md), [`docs/he_dp_v2_protocol.md`](docs/he_dp_v2_protocol.md), and [`docs/svdb_integration.md`](docs/svdb_integration.md).
 
 ### 4.1 Utility across every method
 
@@ -95,6 +97,7 @@ All numbers are held-out test results with each test set evaluated **once**, typ
 | FedAvg (3 seeds) | 0.657 | 0.085 | All 37 clean federated runs fall below centralized; predictions collapse to mostly `N`/`V` |
 | + Differential privacy (ε = 7.98) | 0.247 | 0.024 | Utility destroyed at this privacy level with 5 clients |
 | + Homomorphic encryption | 0.665 | 0.086 | Utility preserved (aggregation error ≈ 10⁻⁷) |
+| HE+DP v2 + lifecycle ledger (one run) | 0.655 | 0.053 | Round 0 selected; conditional privacy accounting; not evidence of useful trained-model utility |
 | + Audit ledger | identical | identical | Recording does not change training (bit-identical) |
 
 ### 4.2 Robustness: what breaks FedAvg, and what fixes it
@@ -133,9 +136,9 @@ All numbers are held-out test results with each test set evaluated **once**, typ
 |---|---|---|
 | RQ1 | Partially answered | The model detects common beats but not rare ones (macro-F1 0.14 centralized) |
 | RQ2 | Partially answered | FedAvg trails centralized training under non-IID clients; the cause of the collapse is unresolved |
-| RQ3 | Partially answered | HE preserves utility at about 20× communication; client-level DP at ε = 7.98 destroys it |
-| RQ4 | Partially answered | The ledger makes training verifiable and tamper-evident with an external anchor; it is not a distributed blockchain |
-| RQ5 | Partially answered | The defense neutralises two attack types at negligible cost; tested against one non-adaptive attacker only |
+| RQ3 | Partially answered | HE preserves utility in the historical standalone run; v2 combines CKKS and aggregate Gaussian noise with conditional ε = 7.98, but selects round 0 |
+| RQ4 | Partially answered | The lifecycle gate checks commitments before aggregation and the global hash before validation; the saved anchor is co-located and there is no distributed consensus |
+| RQ5 | Partially answered | The proposed candidate neutralises two tested attack types at low measured cost; tested against one non-adaptive attacker only |
 
 ## 5. What this study does not establish
 
@@ -143,14 +146,18 @@ This project is an **experimentally complete prototype evaluation**, not a finis
 
 - **No literature review is documented yet.** [`docs/literature_matrix.md`](docs/literature_matrix.md) is an empty template, so the proposed defense is not positioned against prior work. No novelty or superiority is claimed.
 - **The classification task itself is weak.** Macro-F1 is 0.14, the label taxonomy is provisional, and only 8 of 15 classes have test examples.
-- **Components were tested separately.** DP, HE, the ledger and the defense were never combined into the full framework.
+- **Historical baseline scope.** The Day 20 experiments tested DP, HE, the ledger and defense separately. The later HE+DP v2 + ledger run is a limited combined extension, not the full framework: it does not include the proposed defense or a distributed consensus network.
 - **Coverage gaps:**
   - privacy was tested at a single ε, with no record-level DP;
   - the ledger runs on a single node, with no consensus or signatures;
   - there is no local-only baseline;
-  - only 3 + 3 seeds were run.
+  - historical attack/proposal comparisons use 3 original plus 3 fresh seeds; the combined HE+DP and SVDB extension results are single-run, fixed-split evidence.
 
 All 38 recorded limitations are in [`docs/final_limitations.md`](docs/final_limitations.md).
+
+### Post-freeze extension status
+
+The preserved v1 HE+DP pipeline clips and noises each client update before CKKS encryption. V2 uses fixed public weights, encrypted aggregation, trusted decryption, then one aggregate Gaussian perturbation. Protocol assumptions, results, and limitations are in [`docs/he_dp_v2_protocol.md`](docs/he_dp_v2_protocol.md). A separate ledger lifecycle mode verifies commitments before aggregation and global-model hashes before broadcast; its evidence and single-node limitations are in [`docs/blockchain_fl_integration.md`](docs/blockchain_fl_integration.md). The supplied supervisor note requires demonstrating how blockchain enables the experiment, but does not specify consensus, signatures, replication, or another protocol. Requirement 4 therefore remains partially evidenced pending supervisor confirmation.
 
 ## 6. Getting started
 
@@ -167,7 +174,7 @@ All 38 recorded limitations are in [`docs/final_limitations.md`](docs/final_limi
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests        # expect: Ran 110 tests ... OK
+python -m unittest discover -s tests        # current workspace: 114 tests; historical freeze verified 110
 ```
 
 ```bash
@@ -198,12 +205,14 @@ The frozen results are already in the repository: `results/final/` holds the sum
 | `src/models/` | 1D CNN, centralized training and evaluation |
 | `src/federated/` | FedAvg, client partitioning, DP (`privacy.py`), attacks, the proposed defense (`proposed_defense.py`), ablation and final validation |
 | `src/he/` | CKKS encryption and encrypted aggregation |
+| `configs/he_dp_fedavg_v1.json` | New, separate integrated HE+DP experiment configuration |
+| `docs/he_dp_integration.md` | Integrated protocol, privacy accounting, threat model, and current evidence |
 | `src/blockchain/` | Hash-chained ledger, tamper tests, benchmarks, FedAvg recorder |
 | `src/final_report.py` | Builds the consolidated tables and figures in `results/final/` |
 | `configs/` | Frozen configuration for every experiment |
 | `results/` | Per-experiment metrics, tables and figures; the consolidated summary is in `results/final/` |
 | `docs/` | One document per experiment, plus the final results, methodology, limitations and reproducibility |
-| `tests/` | 110 unit and integration tests |
+| `tests/` | 130 unit and integration tests (latest full-suite run; see the submission report) |
 | `notebooks/` | Dataset exploration, preprocessing checks, training and evaluation walkthroughs |
 
 `experiments/`, `src/privacy/` and `src/algorithms/` are empty placeholders from the original project layout; the code they were meant for is in the modules above. Model checkpoints and per-run prediction files can be regenerated and are not tracked in Git, except for the official centralized and FedAvg baselines.
@@ -213,9 +222,13 @@ The frozen results are already in the repository: `results/final/` holds the sum
 | Read this | For |
 |---|---|
 | [`docs/final_results.md`](docs/final_results.md) | All results, research-question evidence, open issues |
+| [`docs/final_submission_report.md`](docs/final_submission_report.md) | Current evidence-based status for the seven supervisor requirements and open approvals |
 | [`docs/final_methodology.md`](docs/final_methodology.md) | The complete pipeline and every design decision |
 | [`docs/final_limitations.md`](docs/final_limitations.md) | All 38 known limitations |
 | [`docs/reproducibility.md`](docs/reproducibility.md) | Environment, commands, seeds, hashes |
+| [`docs/he_dp_integration.md`](docs/he_dp_integration.md) | Integrated HE+DP protocol, accountant assumptions, and evidence status |
+| [`docs/he_dp_v2_protocol.md`](docs/he_dp_v2_protocol.md), [`docs/blockchain_fl_integration.md`](docs/blockchain_fl_integration.md) | V2 privacy protocol and lifecycle-gated HE+DP/blockchain experiment |
+| [`docs/requirement_evidence_matrix.md`](docs/requirement_evidence_matrix.md), [`docs/svdb_integration.md`](docs/svdb_integration.md) | Supervisor requirement evidence and second-dataset provenance |
 | [`docs/research_log.md`](docs/research_log.md) | Day-by-day record of the study |
 | [`docs/dataset_mitbih.md`](docs/dataset_mitbih.md), [`docs/label_taxonomy_audit.md`](docs/label_taxonomy_audit.md), [`docs/patient_mapping_audit.md`](docs/patient_mapping_audit.md) | Dataset exploration and audits |
 

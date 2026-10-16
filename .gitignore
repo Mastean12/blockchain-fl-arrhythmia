@@ -7,6 +7,8 @@ __pycache__/
 data/raw/mitbih/
 data/processed/mitbih_v1/
 data/splits/mitbih_v1/*/*.npz
+data/processed/mitbih_he_dp_v1/
+data/splits/mitbih_he_dp_v1/
 
 # Day 11 robustness runs: per-run checkpoints and prediction arrays are regenerable
 # (src.federated.robustness.run_all); summary tables, figures and per-run CSV/JSON stay tracked.
@@ -59,3 +61,45 @@ results/ablation/figures/federated/*.png
 results/final/runs/models/
 results/final/runs/metrics/federated/*.npz
 results/final/runs/figures/federated/*.png
+
+# Integrated HE+DP: private deterministic noise seeds and regenerable run artifacts
+results/he_dp/private/
+results/he_dp/models/
+results/he_dp/metrics/federated/*.npz
+results/he_dp/figures/federated/*.png
+
+# SVDB raw and reproducible derived data; keep dataset and split metadata outside Git as well.
+data/raw/svdb/
+data/processed/svdb_v1/
+data/splits/svdb_v1/
+data/processed/svdb_v1_recovered_20261016/
+data/splits/svdb_v1_recovered_20261016/
+
+# SVDB external evaluation: per-beat prediction arrays are reproducible and large.
+results/svdb_external_v1/metrics/baseline_test_predictions.npz
+results/svdb_external_v1_recovered_20261016/metrics/baseline_test_predictions.npz
+
+# HE+DP v2: private seed and clean-aggregate diagnostics, plus regenerable checkpoints/predictions.
+results/he_dp_v2/private/
+results/he_dp_v2/models/
+results/he_dp_v2/metrics/federated/*.npz
+results/he_dp_v2/figures/federated/*.png
+
+# Blockchain lifecycle v2: off-chain round states and regenerable checkpoints/predictions.
+results/blockchain_lifecycle_v2/offchain/
+results/blockchain_lifecycle_v2/models/
+results/blockchain_lifecycle_v2/metrics/federated/*.npz
+results/blockchain_lifecycle_v2/figures/federated/*.png
+
+# Combined HE+DP v2 + blockchain runs: keep private noise material, round archives,
+# checkpoints, predictions and regenerable figures out of Git.
+results/he_dp_v2_blockchain_lifecycle/private/
+results/he_dp_v2_blockchain_lifecycle/offchain/
+results/he_dp_v2_blockchain_lifecycle/models/
+results/he_dp_v2_blockchain_lifecycle/metrics/federated/*.npz
+results/he_dp_v2_blockchain_lifecycle/figures/federated/*.png
+results/he_dp_v2_blockchain_lifecycle_recovered_20261016/private/
+results/he_dp_v2_blockchain_lifecycle_recovered_20261016/offchain/
+results/he_dp_v2_blockchain_lifecycle_recovered_20261016/models/
+results/he_dp_v2_blockchain_lifecycle_recovered_20261016/metrics/federated/*.npz
+results/he_dp_v2_blockchain_lifecycle_recovered_20261016/figures/federated/*.png
