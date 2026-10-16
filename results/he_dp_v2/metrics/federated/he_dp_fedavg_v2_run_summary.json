@@ -1,0 +1,256 @@
+{
+  "centralized_validation_reference_epoch1": {
+    "validation_accuracy": 0.6853403461561984,
+    "validation_macro_f1": 0.1737207554842273
+  },
+  "config": {
+    "aggregation": {
+      "batchnorm": "aggregate",
+      "method": "FedAvg",
+      "weighting": "fixed_public"
+    },
+    "data": {
+      "label_config": "configs/preprocessing/mitbih_v1.json",
+      "split_root": "data/splits/mitbih_he_dp_v1"
+    },
+    "experiment_id": "he_dp_fedavg_v2",
+    "homomorphic_encryption": {
+      "aggregation": "fixed_public_weighted_fedavg",
+      "coeff_mod_bit_sizes": [
+        60,
+        40,
+        40,
+        60
+      ],
+      "enabled": true,
+      "encrypted_quantity": "clipped_client_update",
+      "global_scale_bits": 40,
+      "key_model": "public-key encryption and trusted decryptor; process isolation is not enforced in this simulation",
+      "library": "tenseal",
+      "library_version": "0.3.18",
+      "poly_modulus_degree": 8192,
+      "scheme": "CKKS",
+      "security_level_bits": 128
+    },
+    "model": {
+      "architecture": "centralized_cnn_v1",
+      "class": "src.models.cnn1d.ECG1DCNN",
+      "dropout": 0.3
+    },
+    "model_selection": {
+      "metric": "validation_loss",
+      "mode": "min",
+      "split": "validation"
+    },
+    "output_root": "results/he_dp_v2",
+    "participation": {
+      "fraction": 1.0
+    },
+    "partition": {
+      "min_client_segments": 1000,
+      "num_clients": 5,
+      "seed": 42,
+      "strategy": "random_group_equal_count"
+    },
+    "privacy": {
+      "accountant": "full_participation_GDP_plus_analytic_Gaussian_conversion",
+      "adjacency": "add_remove_one_client_slot",
+      "adjacency_definition": "Replace one fixed-roster client's contribution by zero while keeping the roster and every public weight unchanged; all other client slots are identical.",
+      "clipping_norm": 1.0,
+      "delta": 1e-05,
+      "enabled": true,
+      "fixed_roster": [
+        "client_00",
+        "client_01",
+        "client_02",
+        "client_03",
+        "client_04"
+      ],
+      "fixed_weights": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "key_ownership": "trusted decryptor owns the CKKS secret key; clients and server receive public encryption context",
+      "noise_multiplier": 2.69,
+      "noise_placement": "one Gaussian vector after trusted decryption of the homomorphic weighted sum",
+      "noise_rng_assumption": "ideal independent Gaussian samples; reproducible PRNG seed is stored in the private artifact directory and not suitable as a production CSPRNG claim",
+      "privacy_unit": "one participating client's complete local dataset slot",
+      "protocol": "he_dp_v2_aggregate_noise",
+      "release_set": "validation-selected global checkpoints and their post-processing validation metrics; no clean aggregates, individual updates, client counts, noise seeds, or unclipped diagnostics",
+      "rounds": 20,
+      "threat_model": "server cannot decrypt individual ciphertexts; the trusted decryptor is honest, does not collude with the server, sees the clean aggregate, and is excluded from the DP guarantee"
+    },
+    "random_seed": 42,
+    "runtime": {
+      "cpu_threads": 8,
+      "device": "cpu",
+      "evaluation_batch_size": 512,
+      "num_workers": 0
+    },
+    "scope_note": "Versioned follow-up; v1 configurations, outputs, and round-0 result are preserved.",
+    "training": {
+      "batch_size": 256,
+      "client_optimizer_state": "reset_each_round",
+      "learning_rate": 0.001,
+      "local_epochs": 1,
+      "loss": "CrossEntropyLoss",
+      "optimizer": "Adam",
+      "rounds": 20,
+      "shuffle_training": true
+    }
+  },
+  "experiment_id": "he_dp_fedavg_v2",
+  "final_round_validation": {
+    "client_train_accuracy_weighted": null,
+    "client_train_loss_weighted": null,
+    "elapsed_seconds": 123.10947979999946,
+    "participants": 5,
+    "round": 20,
+    "validation_accuracy": 0.0,
+    "validation_loss": 2712908331.8696103,
+    "validation_macro_f1": 0.0,
+    "validation_macro_precision": 0.0,
+    "validation_macro_recall": 0.0,
+    "validation_weighted_f1": 0.0
+  },
+  "homomorphic_encryption": {
+    "ciphertext_chunks_per_client": 3,
+    "config": {
+      "aggregation": "fixed_public_weighted_fedavg",
+      "coeff_mod_bit_sizes": [
+        60,
+        40,
+        40,
+        60
+      ],
+      "enabled": true,
+      "encrypted_quantity": "clipped_client_update",
+      "global_scale_bits": 40,
+      "key_model": "public-key encryption and trusted decryptor; process isolation is not enforced in this simulation",
+      "library": "tenseal",
+      "library_version": "0.3.18",
+      "poly_modulus_degree": 8192,
+      "scheme": "CKKS",
+      "security_level_bits": 128
+    },
+    "encrypted_entries": 10351,
+    "key_generation_seconds": 0.37239799999952083,
+    "public_context_bytes": 1859348,
+    "slots": 4096
+  },
+  "integrated_privacy_pipeline": {
+    "adjacency": "add/remove one client contribution; absent slot is zero; roster and weights fixed",
+    "noise_seed_artifact": "results/he_dp_v2/private/he_dp_fedavg_v2_noise_seeds.json",
+    "privacy_scope": "conditional on the trusted-decryptor exclusion and ideal Gaussian mechanism; covers only released noised global models",
+    "privacy_unit": "one participating client's complete local dataset slot",
+    "process_isolation_enforced": false,
+    "protocol": "fixed public weights; clip each float client delta; CKKS aggregate; trusted decryptor adds one Gaussian to the clean aggregate",
+    "seed_artifact_public": false,
+    "server_sees_individual_plaintext_updates": false,
+    "trusted_decryptor_sees_clean_aggregate": true
+  },
+  "model_path": "results/he_dp_v2/models/federated/he_dp_fedavg_v2_global.pt",
+  "num_clients": 5,
+  "privacy": {
+    "accounting": {
+      "accountant": "fixed-weight add/remove-one-client GDP; full-round composition",
+      "adjacency": "add/remove one client contribution; absent slot is zero; roster and weights fixed",
+      "aggregate_noise_std": 0.538,
+      "delta": 1e-05,
+      "epsilon": 7.979543723560064,
+      "limitations": [
+        "full participation only",
+        "trusted decryptor is excluded",
+        "ideal independent Gaussian sampling",
+        "no protection for client identity/roster",
+        "only noised global-model transcript is covered"
+      ],
+      "mu_gdp": 1.66250407249055,
+      "noise_multiplier": 2.69,
+      "privacy_unit": "one participating client's complete local dataset slot",
+      "rdp_epsilon_upper_bound": 9.359535227141418,
+      "rdp_optimal_order": 3.8899999999999997,
+      "rounds": 20,
+      "sampling_rate": 1.0,
+      "sensitivity_l2": 0.2
+    },
+    "config": {
+      "accountant": "full_participation_GDP_plus_analytic_Gaussian_conversion",
+      "adjacency": "add_remove_one_client_slot",
+      "adjacency_definition": "Replace one fixed-roster client's contribution by zero while keeping the roster and every public weight unchanged; all other client slots are identical.",
+      "clipping_norm": 1.0,
+      "delta": 1e-05,
+      "enabled": true,
+      "fixed_roster": [
+        "client_00",
+        "client_01",
+        "client_02",
+        "client_03",
+        "client_04"
+      ],
+      "fixed_weights": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "key_ownership": "trusted decryptor owns the CKKS secret key; clients and server receive public encryption context",
+      "noise_multiplier": 2.69,
+      "noise_placement": "one Gaussian vector after trusted decryption of the homomorphic weighted sum",
+      "noise_rng_assumption": "ideal independent Gaussian samples; reproducible PRNG seed is stored in the private artifact directory and not suitable as a production CSPRNG claim",
+      "privacy_unit": "one participating client's complete local dataset slot",
+      "protocol": "he_dp_v2_aggregate_noise",
+      "release_set": "validation-selected global checkpoints and their post-processing validation metrics; no clean aggregates, individual updates, client counts, noise seeds, or unclipped diagnostics",
+      "rounds": 20,
+      "threat_model": "server cannot decrypt individual ciphertexts; the trusted decryptor is honest, does not collude with the server, sees the clean aggregate, and is excluded from the DP guarantee"
+    }
+  },
+  "rounds": 20,
+  "selected_round_by_validation_loss": 0,
+  "selected_round_validation": {
+    "client_train_accuracy_weighted": null,
+    "client_train_loss_weighted": null,
+    "elapsed_seconds": 0.0,
+    "participants": 0,
+    "round": 0,
+    "validation_accuracy": 0.6936578802519724,
+    "validation_loss": 2.634322645117271,
+    "validation_macro_f1": 0.054608264423019054,
+    "validation_macro_precision": 0.046243858683464825,
+    "validation_macro_recall": 0.06666666666666667,
+    "validation_weighted_f1": 0.568191794158659
+  },
+  "software": {
+    "numpy": "2.5.3",
+    "torch": "2.14.1+cpu"
+  },
+  "test_evaluated": true,
+  "test_metrics": {
+    "accuracy": 0.6553763095314609,
+    "auroc_defined_class_count": 8,
+    "class_count": 15,
+    "macro_auroc_ovr_defined_classes": 0.42443139059821167,
+    "macro_f1": 0.052787699953408915,
+    "macro_precision": 0.043691753968764055,
+    "macro_recall_all_15_labels_zero_for_no_support": 0.06666666666666667,
+    "macro_sensitivity_supported_classes": 0.125,
+    "macro_specificity_all_classes": 0.9333333333333333,
+    "micro_auroc_ovr_flattened": 0.8190975230934971,
+    "micro_f1": 0.6553763095314609,
+    "micro_precision": 0.6553763095314609,
+    "micro_recall": 0.6553763095314609,
+    "weighted_auroc_ovr_defined_classes": 0.25564656699062144,
+    "weighted_f1": 0.518937119761788,
+    "weighted_precision": 0.4295181070950772,
+    "weighted_recall": 0.6553763095314609,
+    "weighted_sensitivity": 0.6553763095314609,
+    "weighted_specificity": 0.34462369046853913
+  },
+  "trainable_parameters": 10127,
+  "training_elapsed_seconds": 123.49732510000013,
+  "validation_segments": 16351
+}
