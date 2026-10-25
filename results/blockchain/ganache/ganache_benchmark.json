@@ -1,0 +1,256 @@
+{
+  "config": {
+    "rounds": 20,
+    "warmup": 5,
+    "port": 8545,
+    "host": "127.0.0.1",
+    "contract": "FLRoundRegistry",
+    "rpc_url": "http://127.0.0.1:8545"
+  },
+  "samples": [
+    {
+      "round": 0,
+      "transaction_hash": "c67e3e1cf04d8709efe9f274570e6521ee1a9d361a1b6a50acff43e88d290435",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 16.815,
+      "block_number": 7,
+      "status": "completed_05"
+    },
+    {
+      "round": 1,
+      "transaction_hash": "dd10a3da8934a7ac62658f35b7fac9c70f9c5d181d678ce33602e13b8a686e16",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 18.058,
+      "block_number": 8,
+      "status": "completed_06"
+    },
+    {
+      "round": 2,
+      "transaction_hash": "5f5c0a59f9a6a1e592b167c5b9275324dd605964663292b838c6311294fe1026",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 17.75,
+      "block_number": 9,
+      "status": "completed_07"
+    },
+    {
+      "round": 3,
+      "transaction_hash": "32b417720d138b93c9662f4e6a1bec3bcc3a741f4045c2426efa5c713ab05224",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 15.922,
+      "block_number": 10,
+      "status": "completed_08"
+    },
+    {
+      "round": 4,
+      "transaction_hash": "f73201eb119cc82b4465dcd59abdd6ec628c5164406707acf20c6520911177ee",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 15.413,
+      "block_number": 11,
+      "status": "completed_09"
+    },
+    {
+      "round": 5,
+      "transaction_hash": "62b2361ee288332d18a300338e2f5f8c7bd9dbb4ae4e3482329185f67ffc8dbb",
+      "gas_used": 121871,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243742000000000,
+      "fee_eth": 0.000243742,
+      "latency_ms": 15.131,
+      "block_number": 12,
+      "status": "completed_10"
+    },
+    {
+      "round": 6,
+      "transaction_hash": "ae68a477a2ba4f4fdc636b916783d81167e57d1295f8f0860607cf40d477400e",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 15.228,
+      "block_number": 13,
+      "status": "completed_11"
+    },
+    {
+      "round": 7,
+      "transaction_hash": "dedacba67b641d1958d27012549afa9d2bcfd2afdf89b74526248d0da9aa124d",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 14.788,
+      "block_number": 14,
+      "status": "completed_12"
+    },
+    {
+      "round": 8,
+      "transaction_hash": "7223b0123ddb826ba32b0923af38c124f4f7c892c81e1b63997fa57997b083f7",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 13.276,
+      "block_number": 15,
+      "status": "completed_13"
+    },
+    {
+      "round": 9,
+      "transaction_hash": "ef43507e7a05e5eb4bc62e41d95638e87d666ea09e4fd1eca2bf8ebded8cf5e4",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 13.4,
+      "block_number": 16,
+      "status": "completed_14"
+    },
+    {
+      "round": 10,
+      "transaction_hash": "cbb6715213fcb551fe46d1b2a6225171a3cbac77e128ee5d67acf1147c3fad2a",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 14.923,
+      "block_number": 17,
+      "status": "completed_15"
+    },
+    {
+      "round": 11,
+      "transaction_hash": "15a774899cd4c5608ce25bfcd74ca7188cd93bcfe99a052ce5faa5beeaed31b7",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 14.065,
+      "block_number": 18,
+      "status": "completed_16"
+    },
+    {
+      "round": 12,
+      "transaction_hash": "44745b48e37b863d3079b43405e87f0abc58365a3a01c1efa8e3a3126e89b868",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 14.504,
+      "block_number": 19,
+      "status": "completed_17"
+    },
+    {
+      "round": 13,
+      "transaction_hash": "4780b43eef50efe8103f6f95031a211d796aa9fc11c0f4056d104b278339980f",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 14.114,
+      "block_number": 20,
+      "status": "completed_18"
+    },
+    {
+      "round": 14,
+      "transaction_hash": "31dd239918a431fa0e1f26e6d887b834a616ca3cb3c7d808b638188922df340a",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 14.294,
+      "block_number": 21,
+      "status": "completed_19"
+    },
+    {
+      "round": 15,
+      "transaction_hash": "7fbcd74bf5f7af4685a7f96a13a752abf442b05beb3ca706c180d7bb1f7b6857",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 14.61,
+      "block_number": 22,
+      "status": "completed_20"
+    },
+    {
+      "round": 16,
+      "transaction_hash": "6124facc2f35ed8bec52ee5133a4ff99b0455eefd40285ea8c44ed7a6639653b",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 14.385,
+      "block_number": 23,
+      "status": "completed_21"
+    },
+    {
+      "round": 17,
+      "transaction_hash": "11940c0dd5217643fb92deb45d6c74b5201c8f24345d53adafacc29504cd28aa",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 14.307,
+      "block_number": 24,
+      "status": "completed_22"
+    },
+    {
+      "round": 18,
+      "transaction_hash": "9bfc0bef11fafc4af6e03bf3d3120c37741cd2719a67b15e41a1b39c6439ee1f",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 14.071,
+      "block_number": 25,
+      "status": "completed_23"
+    },
+    {
+      "round": 19,
+      "transaction_hash": "00f09213bb38f5264914b714865d046384a31490c4a5858d9e252f90cb095224",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 14.079,
+      "block_number": 26,
+      "status": "completed_24"
+    }
+  ],
+  "summary": {
+    "rpc_url": "http://127.0.0.1:8545",
+    "ganache_started": true,
+    "ganache_version": "ganache v7.9.2",
+    "network_id": 1337,
+    "gas_price_wei": 2000000000,
+    "gas_price_gwei": 2.0,
+    "tx_count": 20,
+    "mean_gas_used": 121889.0,
+    "median_gas_used": 121895.0,
+    "max_gas_used": 121895,
+    "mean_latency_ms": 14.95665,
+    "median_latency_ms": 14.556999999999999,
+    "p95_latency_ms": 17.75,
+    "mean_fee_eth": 0.000243778,
+    "median_fee_eth": 0.00024379,
+    "throughput_tx_per_s": 66.85989175383526,
+    "methodology": "Actual local Ganache benchmark; gas and fee values are in the simulated chain unit. No mainnet or real-world energy figures are claimed."
+  },
+  "notes": [
+    "Transaction gas is recorded from the actual receipt on the local Ganache chain.",
+    "Fee estimates use the chain's current gas price and convert wei to ether.",
+    "Energy use is not directly measured because Ganache does not expose a production energy model."
+  ]
+}

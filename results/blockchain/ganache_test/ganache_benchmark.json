@@ -1,0 +1,80 @@
+{
+  "config": {
+    "rounds": 4,
+    "warmup": 1,
+    "port": 8555,
+    "host": "127.0.0.1",
+    "contract": "FLRoundRegistry",
+    "rpc_url": "http://127.0.0.1:8545"
+  },
+  "samples": [
+    {
+      "round": 0,
+      "transaction_hash": "deb56f89963f87afca33839bb8d568ec8771e857045ba0c095e639e7a2e37e65",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 20.972,
+      "block_number": 35,
+      "status": "completed_01"
+    },
+    {
+      "round": 1,
+      "transaction_hash": "0d1b0720f36ff5b119427be5ada4a6ba6985d151c9eec30be627135d1132a642",
+      "gas_used": 121883,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243766000000000,
+      "fee_eth": 0.000243766,
+      "latency_ms": 20.202,
+      "block_number": 36,
+      "status": "completed_02"
+    },
+    {
+      "round": 2,
+      "transaction_hash": "028377edb0c1b5b3a3b728350fd88554a3aa7e2bdb92a08deaecc8b0f2bba950",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 23.35,
+      "block_number": 37,
+      "status": "completed_03"
+    },
+    {
+      "round": 3,
+      "transaction_hash": "4da25a3e348b1f989bf6e5e308f4d91af6aea32c6abadaa39bd68cb9e9181cb9",
+      "gas_used": 121895,
+      "gas_price_wei": 2000000000,
+      "fee_wei": 243790000000000,
+      "fee_eth": 0.00024379,
+      "latency_ms": 20.663,
+      "block_number": 38,
+      "status": "completed_04"
+    }
+  ],
+  "summary": {
+    "rpc_url": "http://127.0.0.1:8545",
+    "ganache_started": false,
+    "ganache_version": "ganache v7.9.2",
+    "network_id": 1337,
+    "gas_price_wei": 2000000000,
+    "gas_price_gwei": 2.0,
+    "tx_count": 4,
+    "mean_gas_used": 121892.0,
+    "median_gas_used": 121895.0,
+    "max_gas_used": 121895,
+    "mean_latency_ms": 21.296750000000003,
+    "median_latency_ms": 20.817500000000003,
+    "p95_latency_ms": 20.972,
+    "mean_fee_eth": 0.00024378399999999998,
+    "median_fee_eth": 0.00024379,
+    "throughput_tx_per_s": 46.95552138237054,
+    "methodology": "Actual local Ganache benchmark; gas and fee values are in the simulated chain unit. No mainnet or real-world energy figures are claimed."
+  },
+  "notes": [
+    "Transaction gas is recorded from the actual receipt on the local Ganache chain.",
+    "Fee estimates use the chain's current gas price and convert wei to ether.",
+    "Energy use is not directly measured because Ganache does not expose a production energy model."
+  ]
+}

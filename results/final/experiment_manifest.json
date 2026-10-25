@@ -220,6 +220,13 @@
     "configs/final/final_validation_v1.json": "c5dfe21007f9b7e836809aa8f682f60a71b9cefbbc9339325077f712442ba552"
   },
   "git_history_at_freeze": [
+    "f51d622 chore: keep local agent and editor settings untracked",
+    "503a568 research: publish remaining experiment summaries",
+    "687e5c3 research: publish aggregate experiment evidence",
+    "2b6b9b2 research: integrate privacy and blockchain evidence",
+    "8be379b docs: rewrite README with figures and verify requirements",
+    "a08b19a docs: update README for the research freeze",
+    "8f05b4e research: finalize evaluation and freeze study",
     "3057524 research: ablate the proposed robust aggregation defense",
     "5c30bcc research: add proposed robust aggregation defense",
     "f858aa7 research: evaluate malicious-client attacks against FedAvg",
@@ -237,9 +244,7 @@
     "31a517d Add centralized ECG 1D CNN baseline",
     "0b6eb79 Add reproducible MIT-BIH group splits",
     "bbb63f3 Add MIT-BIH ECG preprocessing pipeline",
-    "38399f5 Set up research environment and explore MIT-BIH",
-    "617e625 Add initial research project structure",
-    "c6fc14d Initial commit"
+    "38399f5 Set up research environment and explore MIT-BIH"
   ],
   "regenerable_untracked": [
     "data/raw",
