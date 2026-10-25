@@ -140,6 +140,20 @@ Numbers are held-out test results and are **descriptive**: no significance tests
 | RQ4 | Partially answered | The lifecycle gate checks commitments before aggregation and the global hash before validation; the saved anchor is co-located and there is no distributed consensus |
 | RQ5 | Partially answered | The proposed candidate neutralises two tested attack types at low measured cost; tested against one non-adaptive attacker only |
 
+### 4.5 Changes made to support and qualify these results
+
+The post-freeze changes improve how results are reported and add controlled diagnostics; they do not replace the frozen test results or establish that the 90% accuracy target has been met.
+
+| Change | Evidence and interpretation |
+|---|---|
+| Expanded the final comparison summaries to retain macro/weighted precision and recall alongside accuracy, F1, and AUROC. | The consolidated tables are generated from saved model-evaluation artifacts. See [`results/final/final_utility.csv`](results/final/final_utility.csv) and [`src/final_report.py`](src/final_report.py). |
+| Added a separate, versioned class-weighted centralized training diagnostic. | [`configs/training/centralized_cnn_weighted_v1.json`](configs/training/centralized_cnn_weighted_v1.json) uses inverse-frequency class weights, with training and validation only. Its validation history is saved under [`results/diagnostics/class_weighted_v1/`](results/diagnostics/class_weighted_v1/). It has not been evaluated on the held-out test set; therefore it has no test accuracy and is not compared with the frozen 0.769 test accuracy. |
+| Documented why accuracy and macro-F1 tell different stories for the current task. | The frozen 15-class label distribution is highly imbalanced, and only 8 classes have held-out test support. The centralized baseline's test accuracy is 0.7688 while macro-F1 is 0.1399. See [`docs/model_diagnostics.md`](docs/model_diagnostics.md). |
+| Added an explicit approval gate for new HE+DP experiments. | New privacy experiments remain blocked until the privacy unit, threat model, key/decryption roles, adjacency, accountant assumptions, and release set are approved. Historical HE+DP runs and their round-0 selection are preserved. See [`docs/privacy_approval_gate.md`](docs/privacy_approval_gate.md). |
+| Added a separate local Ganache transaction benchmark. | The saved 20-transaction run records mean gas use of 121,889, mean local transaction latency of 14.96 ms, and mean simulated fee of 0.000243778 ETH at a 2 gwei gas price. These are local development-chain measurements, not mainnet costs; energy was not measured. See [`results/blockchain/ganache/ganache_benchmark.json`](results/blockchain/ganache/ganache_benchmark.json). |
+
+The controlled weighted-training diagnostic is not evidence of improved test performance. For the full acceptance state—including open supervisor decisions—see [`docs/requirement_evidence_matrix.md`](docs/requirement_evidence_matrix.md).
+
 ## 5. What this study does not establish
 
 This project is an **experimentally complete prototype evaluation**, not a finished answer to its research questions. Before relying on or extending it, note:
@@ -220,7 +234,7 @@ The frozen results are already in the repository: `results/final/` holds the sum
 | `configs/` | Frozen configuration for every experiment |
 | `results/` | Per-experiment metrics, tables and figures; the consolidated summary is in `results/final/` |
 | `docs/` | One document per experiment, plus the final results, methodology, limitations and reproducibility |
-| `tests/` | 130 unit and integration tests (latest full-suite run; see the submission report) |
+| `tests/` | 143 unit and integration tests plus 3 subtests in the latest full-suite run |
 | `notebooks/` | Dataset exploration, preprocessing checks, training and evaluation walkthroughs |
 
 `experiments/`, `src/privacy/` and `src/algorithms/` are empty placeholders from the original project layout; the code they were meant for is in the modules above. Model checkpoints and per-run prediction files can be regenerated and are not tracked in Git, except for the official centralized and FedAvg baselines.
@@ -237,6 +251,7 @@ The frozen results are already in the repository: `results/final/` holds the sum
 | [`docs/he_dp_integration.md`](docs/he_dp_integration.md) | Integrated HE+DP protocol, accountant assumptions, and evidence status |
 | [`docs/he_dp_v2_protocol.md`](docs/he_dp_v2_protocol.md), [`docs/blockchain_fl_integration.md`](docs/blockchain_fl_integration.md) | V2 privacy protocol and lifecycle-gated HE+DP/blockchain experiment |
 | [`docs/requirement_evidence_matrix.md`](docs/requirement_evidence_matrix.md), [`docs/svdb_integration.md`](docs/svdb_integration.md) | Supervisor requirement evidence and second-dataset provenance |
+| [`docs/model_diagnostics.md`](docs/model_diagnostics.md), [`docs/privacy_approval_gate.md`](docs/privacy_approval_gate.md) | Centralized utility diagnosis and approval conditions before further HE+DP experiments |
 | [`docs/research_log.md`](docs/research_log.md) | Day-by-day record of the study |
 | [`docs/dataset_mitbih.md`](docs/dataset_mitbih.md), [`docs/label_taxonomy_audit.md`](docs/label_taxonomy_audit.md), [`docs/patient_mapping_audit.md`](docs/patient_mapping_audit.md) | Dataset exploration and audits |
 
