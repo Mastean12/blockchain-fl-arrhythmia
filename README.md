@@ -193,6 +193,14 @@ python -m unittest discover -s tests
 
 The MIT-BIH data is **not part of the Git repository**. It is publicly available from [PhysioNet](https://physionet.org/content/mitdb/1.0.0/). Place it in `data/raw/mitbih/`, then follow the preprocessing and split steps in [`docs/reproducibility.md`](docs/reproducibility.md). That guide also gives every experiment's command, seed and expected hash.
 
+### Local Ganache benchmark
+
+A minimal Ganache-backed benchmark is available at [`src/blockchain/ganache_benchmark.py`](src/blockchain/ganache_benchmark.py). It starts a local Ganache RPC if needed, deploys a tiny FL round registry contract, and records the actual gas used, fee, transaction latency, and throughput from the chain receipt. The generated artifact is saved to [`results/blockchain/ganache/ganache_benchmark.json`](results/blockchain/ganache/ganache_benchmark.json). Values are for the local development chain only; they are not mainnet or real-world energy measurements.
+
+```powershell
+.\.venv\Scripts\python.exe src/blockchain/ganache_benchmark.py
+```
+
 ### Quick look without retraining
 
 The frozen results are already in the repository: `results/final/` holds the summary tables, `docs/final_results.md` the narrative, and `notebooks/` the walkthroughs. A single 20-round FedAvg run takes about 2 minutes on a modern CPU.

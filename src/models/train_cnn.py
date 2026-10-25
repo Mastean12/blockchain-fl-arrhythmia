@@ -134,13 +134,30 @@ def _evaluate(model, loader, criterion, device, num_classes):
     return {"loss": total_loss / total, "accuracy": accuracy, "macro_f1_all_labels": macro_f1}
 
 
+def compute_class_weights(train_dataset, class_to_index):
+    """Inverse-frequency weights from the training split, using the configured class map."""
+    counts = np.zeros(len(class_to_index), dtype=np.float64)
+    for label, count in train_dataset.class_counts.items():
+        if label in class_to_index:
+            counts[class_to_index[label]] = float(count)
+    nonzero = counts[counts > 0]
+    if nonzero.size == 0:
+        return np.ones(len(class_to_index), dtype=np.float64)
+    weights = np.divide(1.0, counts, out=np.ones_like(counts), where=counts > 0)
+    weights = weights / weights.mean()
+    return weights
+
+
 def train_model(train_dataset, validation_dataset, class_to_index, config, output_root="results"):
     """Train with training batches; validation is used for epoch monitoring only."""
     _seed_everything(int(config["random_seed"]))
     torch.set_num_threads(int(config["cpu_threads"]))
     device = torch.device(config["device"])
     model = ECG1DCNN(num_classes=len(class_to_index), dropout=float(config["dropout"])).to(device)
-    criterion = nn.CrossEntropyLoss()
+    class_weights = None
+    if bool(config.get("use_class_weights", False)):
+        class_weights = torch.as_tensor(compute_class_weights(train_dataset, class_to_index), dtype=torch.float32, device=device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = _optimizer(config["optimizer"], model.parameters(), float(config["learning_rate"]))
     generator = torch.Generator().manual_seed(int(config["random_seed"]))
     train_loader = DataLoader(train_dataset, batch_size=int(config["batch_size"]),
@@ -211,6 +228,7 @@ def train_model(train_dataset, validation_dataset, class_to_index, config, outpu
         "validation_record_ids": validation_dataset.record_ids,
         "train_class_distribution": train_dataset.class_counts,
         "validation_class_distribution": validation_dataset.class_counts,
+        "class_weight_vector": class_weights.detach().cpu().numpy().tolist() if class_weights is not None else None,
         "architecture": model_architecture(),
         "trainable_parameters": count_trainable_parameters(model),
         "best_epoch_by_validation_loss": best_epoch,

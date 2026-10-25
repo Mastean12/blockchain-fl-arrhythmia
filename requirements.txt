@@ -29,3 +29,7 @@ tenseal==0.3.18        # CKKS via Microsoft SEAL; prebuilt wheels for CPython 3.
 
 # Notebooks (also provides ipykernel, nbconvert and nbformat)
 jupyterlab==4.6.4
+
+# Local Ethereum/Ganache benchmarking (transaction gas and latency)
+web3==8.0.0
+py-solc-x==2.0.5

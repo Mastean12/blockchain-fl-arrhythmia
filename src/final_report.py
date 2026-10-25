@@ -17,7 +17,8 @@ import pandas as pd
 from src.federated.final_validation import collect as collect_final, load_final_config
 
 OUT = Path("results/final")
-MET = ["accuracy", "macro_f1", "weighted_f1", "macro_recall", "macro_auroc"]
+MET = ["accuracy", "macro_precision", "macro_recall", "macro_f1",
+       "weighted_precision", "weighted_recall", "weighted_f1", "macro_auroc"]
 
 
 def _json(path):
@@ -49,16 +50,21 @@ def utility_table(final_runs):
     c = _json("results/metrics/baseline_metrics.json")["metrics"]
     rows.append({"day": 6, "experiment": "centralized_cnn_v1", "arm": "centralized", "n_runs": 1, "seeds": "42",
                  "source": "results/metrics/baseline_metrics.json", "note": "frozen centralized baseline",
-                 **{f"{m}_mean": v for m, v in zip(MET, [c["accuracy"], c["macro_f1"], c["weighted_f1"],
+                 **{f"{m}_mean": v for m, v in zip(MET, [c["accuracy"], c["macro_precision"],
                                                        c["macro_recall_all_15_labels_zero_for_no_support"],
+                                                       c["macro_f1"], c["weighted_precision"],
+                                                       c["weighted_recall"], c["weighted_f1"],
                                                        c["macro_auroc_ovr_defined_classes"]])}})
     o = _json("results/metrics/federated/fedavg_v1_test_metrics.json")["metrics"]
     rows.append({"day": 10, "experiment": "fedavg_v1 (official)", "arm": "FedAvg", "n_runs": 1, "seeds": "42",
                  "source": "results/metrics/federated/fedavg_v1_test_metrics.json", "note": "official FedAvg run",
-                 **{f"{m}_mean": v for m, v in zip(MET, [o["accuracy"], o["macro_f1"], o["weighted_f1"],
+                 **{f"{m}_mean": v for m, v in zip(MET, [o["accuracy"], o["macro_precision"],
                                                        o["macro_recall_all_15_labels_zero_for_no_support"],
+                                                       o["macro_f1"], o["weighted_precision"],
+                                                       o["weighted_recall"], o["weighted_f1"],
                                                        o["macro_auroc_ovr_defined_classes"]])}})
-    std_cols = ["test_accuracy", "test_macro_f1", "test_weighted_f1", "test_macro_recall", "test_macro_auroc"]
+    std_cols = ["test_accuracy", "test_macro_precision", "test_macro_recall", "test_macro_f1",
+                "test_weighted_precision", "test_weighted_recall", "test_weighted_f1", "test_macro_auroc"]
     rob = pd.read_csv("results/robustness/tables/robustness_runs.csv")
     for part in ("natural", "controlled"):
         rows.append(_utility_row(11, "FedAvg robustness", f"{part} partition", rob[rob.partition == part], std_cols,
@@ -280,11 +286,13 @@ def write_all():
     final_runs.to_csv(OUT / "final_confirmation_runs.csv", index=False)
     summary_rows = []
     for (arm, cond), g in final_runs.groupby(["arm", "condition"], sort=False):
-        for metric in ["test_accuracy", "test_macro_f1", "test_weighted_f1", "test_macro_recall", "test_macro_auroc",
-                       "selected_round", "final_round_validation_macro_f1", "nan_validation_rounds",
-                       "rounds_with_negative_bn_running_var", "attack_detection_rate", "honest_false_positive_rate",
-                       "relative_deviation_from_clean_fedavg_final", "defense_ms_per_round", "training_seconds",
-                       "n_predicted_classes"]:
+        for metric in ["test_accuracy", "test_macro_precision", "test_macro_recall", "test_macro_f1",
+                       "test_weighted_precision", "test_weighted_recall", "test_weighted_f1",
+                       "test_macro_auroc", "selected_round", "final_round_validation_macro_f1",
+                       "nan_validation_rounds", "rounds_with_negative_bn_running_var",
+                       "attack_detection_rate", "honest_false_positive_rate",
+                       "relative_deviation_from_clean_fedavg_final", "defense_ms_per_round",
+                       "training_seconds", "n_predicted_classes"]:
             summary_rows.append({"arm": arm, "condition": cond, "metric": metric, **_stats(g[metric])})
     confirmation = pd.DataFrame(summary_rows)
     confirmation.to_csv(OUT / "final_confirmation_summary.csv", index=False)
